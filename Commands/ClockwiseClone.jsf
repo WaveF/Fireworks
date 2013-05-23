@@ -1,36 +1,41 @@
 ﻿var dom = fw.getDocumentDOM();
 var sel = fw.selection;
-var angle = prompt("请输入旋转角度\nPlease enter angle of rotation", "5");
-var radius = prompt("请输入旋转半径\nPlease enter radius", "0");
-var copies = prompt("请输入克隆次数（0为转一周所需克隆数）\nHow many times you want to clone(0 will be considered as many as clone in 360 degree)：", "0");
-var opacity = fw.yesNoDialog("开启渐进透明度？\nEnable alpha fading?");
-
-if(radius >= 0){
-	if(radius > 0){
-		dom.addNewRectanglePrimitive({left:sel[0].left, top:sel[0].top, right:sel[0].left+(sel[0].width+radius)*2, bottom:sel[0].top+sel[0].height}, 0);
-		dom.setOpacity(0);
-		dom.selectAll();
-		fw.getDocumentDOM().group("normal");
-	}
-	
-	dom.convertToSymbol("graphic", "CloneRotateSymbol", false);
-	
-	if(copies<0){
-		alert("克隆数不能低于0，将按0处理\nValue of clone can not less than 0, consider as 0");
-	}
-	if(copies==0){
-		copies = Math.floor(360/angle) - 1;
-	}
-	
-
-	for(var i=0; i<copies; i++){
-		dom.cloneSelection();
-		dom.rotateSelection(angle, "autoTrimImages transformAttributes");
-		
-		if(opacity){
-			dom.setOpacity(i/copies*100);
-		}
-	}
+if(sel.length==0){
+	alert("你必须先选择一个对象！\nYou must select an object first!");
 }else{
-	alert("半径不能小于0，命令终止！\nRadius less than 0, now abort.");
+	var angle = prompt("请输入旋转角度\nPlease enter angle of rotation", "5");
+	var radius = prompt("请输入旋转半径\nPlease enter radius", "0");
+	var copies = prompt("请输入克隆次数（0为转一周所需克隆数）\nHow many times you want to clone(0 will be considered as many as clone in 360 degree)：", "0");
+	var opacity = fw.yesNoDialog("开启渐进透明度？\nEnable alpha fading?");
+
+	if(radius >= 0){
+		if(radius > 0){
+			dom.addNewRectanglePrimitive({left:sel[0].left, top:sel[0].top, right:sel[0].left+(sel[0].width+radius)*2, bottom:sel[0].top+sel[0].height}, 0);
+			dom.setOpacity(0);
+			dom.selectAll();
+			fw.getDocumentDOM().group("normal");
+		}
+		
+		dom.convertToSymbol("graphic", "CloneRotateSymbol", false);
+		
+		if(copies<0){
+			alert("克隆数不能低于0，将按0处理\nValue of clone can not less than 0, consider as 0");
+		}
+		if(copies==0){
+			copies = Math.floor(360/angle) - 1;
+		}
+		
+
+		for(var i=0; i<copies; i++){
+			dom.cloneSelection();
+			dom.rotateSelection(angle, "autoTrimImages transformAttributes");
+			
+			if(opacity){
+				dom.setOpacity(i/copies*100);
+			}
+		}
+	}else{
+		alert("半径不能小于0，命令终止！\nRadius less than 0, now abort.");
+	}
+
 }
