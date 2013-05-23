@@ -16,7 +16,7 @@ if(radius >= 0){
 	dom.convertToSymbol("graphic", "CloneRotateSymbol", false);
 	
 	if(copies<0){
-		alert("克隆数不能低于0，将按0处理\nValue of clone less than 0, consider as 0");
+		alert("克隆数不能低于0，将按0处理\nValue of clone can not less than 0, consider as 0");
 	}
 	if(copies==0){
 		copies = Math.floor(360/angle) - 1;
