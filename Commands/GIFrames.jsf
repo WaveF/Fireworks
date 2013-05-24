@@ -2,7 +2,6 @@
 /*                   miniCG.com - by WaveF                 */
 /*---------------------------------------------------------*/
 
-//Reduce GIF frames
 
 var totalFrames = fw.getDocumentDOM().frameCount;
 var currentFrame = fw.getDocumentDOM().currentFrameNum
