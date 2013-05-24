@@ -5,6 +5,9 @@
 var dom = fw.getDocumentDOM();
 var sel = fw.selection;
 
+var _width = dom.width;
+var _height = dom.height;
+
 if(sel.length==0){
 	alert("你必须先选择一个对象！\nYou must select an object first!");
 }else{
@@ -14,31 +17,48 @@ if(sel.length==0){
 	var radius = Number(userData.split(sp)[1]);
 	var copies = Number(userData.split(sp)[2]);
 	var opacity = fw.yesNoDialog("开启渐进透明度？\nEnable alpha fading?");
-
+	
+	
 	if(radius >= 0){
-		if(radius > 0){
-			dom.addNewRectanglePrimitive({left:sel[0].left, top:sel[0].top, right:sel[0].left+(sel[0].width+radius)*2, bottom:sel[0].top+sel[0].height}, 0);
-			dom.setOpacity(0);
-			dom.selectAll();
-			fw.getDocumentDOM().group("normal");
-		}
+		dom.clipCut();
 		
-		dom.convertToSymbol("graphic", "ClockwiseCloneSymbol", false);
+		var res = new Object();  
+		res.units = "inch";  
+		res.pixelsPerUnit = 72;
 
-
+		var size = new Object();
+		size.x = _width;
+		size.y = _height;
+		
+		var fwdoc = fw.createFireworksDocument(size, res, "#FFFFFF");
+		fw.getDocumentDOM().clipPaste("ask user", "vector");
+		fw.getDocumentDOM().addNewRectanglePrimitive({left:sel[0].left, top:sel[0].top, right:sel[0].left+(sel[0].width+radius)*2, bottom:sel[0].top+sel[0].height}, 0);
+		fw.getDocumentDOM().setOpacity(0);
+		fw.getDocumentDOM().selectAll();
+		fw.getDocumentDOM().group("normal");
+		fw.getDocumentDOM().convertToSymbol("graphic", "ClockwiseCloneSymbol", false);
+		
+		
 		if(copies==0){
 			copies = Math.floor(360/angle) - 1;
 		}
 		
-
 		for(var i=0; i<copies; i++){
-			dom.cloneSelection();
-			dom.rotateSelection(angle, "autoTrimImages transformAttributes");
+			//fw.getDocumentDOM().cloneSelection();
+			fw.getDocumentDOM().clipCopy();
+			fw.getDocumentDOM().clipPaste("ask user", "vector");
+			fw.getDocumentDOM().rotateSelection(angle, "autoTrimImages transformAttributes");
 			
 			if(opacity){
-				dom.setOpacity(i/copies*100);
+				fw.getDocumentDOM().setOpacity(i/copies*100);
 			}
 		}
+		
+		fw.getDocumentDOM().selectAll();
+		fw.getDocumentDOM().clipCut();
+		fw.getDocumentDOM().close(false);
+		
+		dom.clipPaste("ask user", "vector");
 	}else{
 		alert("半径不能小于0，命令终止！\nRadius  can not less than 0, now abort.");
 	}
