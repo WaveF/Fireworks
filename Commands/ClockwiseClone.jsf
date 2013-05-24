@@ -1,4 +1,8 @@
-﻿var dom = fw.getDocumentDOM();
+﻿/*---------------------------------------------------------*/
+/*                   miniCG.com - by WaveF                 */
+/*---------------------------------------------------------*/
+
+var dom = fw.getDocumentDOM();
 var sel = fw.selection;
 
 if(sel.length==0){
