@@ -23,8 +23,8 @@ if(sel.length==0){
 		dom.clipCut();
 		
 		var res = new Object();  
-		res.units = "inch";  
-		res.pixelsPerUnit = 72;
+		res.units = dom.resolutionUnits;
+		res.pixelsPerUnit = dom.resolution;
 
 		var size = new Object();
 		size.x = _width;
