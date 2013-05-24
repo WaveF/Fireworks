@@ -1,0 +1,77 @@
+﻿var dom = fw.getDocumentDOM();
+
+//dom.selectAll();
+sel = fw.selection;
+
+for(i=0; i<sel.length; i++){
+  fw.selection = sel[i];
+  
+  //random position
+  dom.moveSelectionTo({x:getRandomNum(0, dom.width-sel[i].width), y:getRandomNum(0, dom.height-sel[i].height)}, false, true);
+  
+  //random opacity
+  dom.setOpacity(getRandomNum(1, 100));
+  
+  //random size
+  dom.scaleSelection(getRandomNum(1, 10)*.1, getRandomNum(1, 10)*.1, "autoTrimImages transformAttributes");
+  
+  //random angle
+  dom.rotateSelection(getRandomNum(1, 360), "autoTrimImages transformAttributes");
+  
+  //random color
+  //dom.applyEffects({ category:"UNUSED", effects:[ { Blendmode:0, Color:getRandomColor(), EffectIsVisible:true, EffectMoaID:"{dd54adc0-a279-11d3-b92a000502f3fdbe}", Opacity:100, category:"Adjust Color", name:"Color Fill" } ], name:"UNUSED" });
+  
+  //random blur
+  dom.applyEffects({ category:"UNUSED", effects:[ { EffectIsVisible:true, EffectMoaID:"{d04ef8c0-71b3-11d1-8c8200a024cdc039}", MB_filter_preview_tile_size:"-1 -1", category:"Blur", gaussian_blur_radius:getRandomNum(0,10), name:"Gaussian Blur..." } ], name:"UNUSED" });
+  
+  //random color + blur
+  //dom.applyEffects({ category:"UNUSED", effects:[ { Blendmode:0, Color:getRandomColor(), EffectIsVisible:true, EffectMoaID:"{dd54adc0-a279-11d3-b92a000502f3fdbe}", Opacity:100, category:"Adjust Color", name:"Color Fill" }, { EffectIsVisible:true, EffectMoaID:"{d04ef8c0-71b3-11d1-8c8200a024cdc039}", MB_filter_preview_tile_size:"-1 -1", category:"Blur", gaussian_blur_radius:getRandomNum(0,10), name:"Gaussian Blur..." } ], name:"UNUSED" });
+}
+
+dom.selectNone();
+
+function getRandomNum(min, max){
+  var num = Math.floor(Math.random()*(max-min)+min);
+  return num;
+}
+
+function getRandomColor(){
+  //HSB值，锁定饱和度和亮度，随机色相
+  var rgb = HSB_RGB(getRandomNum(0,360)*.01,.8,1);
+  
+  return rgb2hex(rgb[0], rgb[1], rgb[2]);
+  
+  /* ----- 随机RGB色，未必好看 -----
+  var r = Math.floor(Math.random() * 255).toString(16);
+  var g = Math.floor(Math.random() * 255).toString(16);
+  var b = Math.floor(Math.random() * 255).toString(16);
+  r = r.length == 1 ? "0" + r : r;
+  g = g.length == 1 ? "0" + g : g;
+  b = b.length == 1 ? "0" + b : b;
+  return "#" + r + g + b;
+  */
+}
+
+
+
+//-------- Color Convert Functions --------//
+function HSB_RGB(h, s, v){
+    var r, g, b;
+
+    var i = Math.floor(h * 6);
+    var f = h * 6 - i;
+    var p = v * (1 - s);
+    var q = v * (1 - f * s);
+    var t = v * (1 - (1 - f) * s);
+
+    switch(i % 6){
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+
+    return [r * 255, g * 255, b * 255];
+}
