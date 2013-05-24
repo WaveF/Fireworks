@@ -59,6 +59,7 @@ if(sel.length==0){
 		fw.getDocumentDOM().close(false);
 		
 		dom.clipPaste("ask user", "vector");
+		dom.group("normal");
 	}else{
 		alert("半径不能小于0，命令终止！\nRadius  can not less than 0, now abort.");
 	}
