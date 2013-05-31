@@ -11,4 +11,26 @@
 # Depth of Field
 
 
-# 
+
+#Duplicate, Rotate and Offset Panel for Fireworks
+A cool little extension for creating duplicate objects, Duplicate, Offset, and Rotate will automatically 
+create duplicates of objects and arrange them in a variety of ways. For those times when you need to make 
+something like a grid, or just create a line of small squares or circles, this one is a winner. 
+You can even choose to animate the copied objects by accessing the options for the extension and 
+choosing to distribute to frames. Here you see how easy it was to create a grid shape by drawing one rectangle, 
+setting it to duplicate at 180 degrees and offset the objects 2 pixels from each other.
+
+http://www.communitymx.com/content/source/D6E52/dor_panel.gif
+
+#features
+- Make a grouping for transform options
+
+  http://www.reallusion.com/iclone/Help/iClone5/Images/Panel_Multi_Duplicate.jpg
+  http://www.hotgloo.com/img/guide/part1_step4.jpg
+  http://blog.lynda.com/wp-content/uploads/2013/01/lynda-dekes-techniques-193-001.jpg
+  
+- Use other UI such as sliders or dropdown.
+
+- Able to save settings as presets
+
+- 
