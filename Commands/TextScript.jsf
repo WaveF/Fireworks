@@ -1,0 +1,28 @@
+﻿/*--------------------------------------------------
+	Use  <<Save=****.jsf>> to save as Command.
+	Example: <<Save=FileName.jsf>>
+--------------------------------------------------*/
+
+var sel = fw.selection;
+var tmpFile = fw.appDir + "/tempTextScript.jsf";
+
+if(sel[0] == "[object Text]" && sel.length==1){
+	var jsf = sel[0].textChars;
+	jsf = jsf.split("”").join("'");
+	jsf = jsf.split("“").join("'");
+	
+	var txtArr = jsf.split("<<Save=");
+	if(txtArr.length==2){ var cmdFile = txtArr[1].split(">>").join(""); }
+	var jsf = jsf.split("<<Save=" + cmdFile + ">>").join("");
+	
+	if(txtArr.length==2){
+		fw.saveJsCommand(jsf, cmdFile);
+		fw.saveJsCommand(jsf, fw.appDir+"/Configuration/Commands/"+cmdFile);
+	}
+	
+	fw.saveJsCommand(jsf, tmpFile);
+	fw.runScript(tmpFile);
+	Files.deleteFileIfExisting(tmpFile);
+}else{
+	alert("You should select a single Text Object.");
+}
