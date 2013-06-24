@@ -1,6 +1,7 @@
 var letterNum = prompt("How many Letters in a TextBox?", "10");
 var textboxNum = prompt("How many TextBox you want to create?", "10");
-var offsetY = 0;
+var offsetY = 50;
+var textArray = [];
 
 for(var i=0; i<textboxNum; i++){
 	fw.getDocumentDOM().addNewText({left:100, top:offsetY, right:0, bottom:0}, true);
@@ -13,7 +14,11 @@ for(var i=0; i<textboxNum; i++){
 	for(var j=0; j<=letterNum; j++){		fw.selection[0].textChars += String.fromCharCode(getRandomNum(33,126));
 	}
 	offsetY += fw.selection[0].height;
+	textArray.push(fw.selection[0]);
 }
+fw.selection = textArray;
+fw.getDocumentDOM().group("normal");
+fw.getDocumentDOM().ungroup();
 
 function getRandomNum(min, max){
   var num = Math.floor(Math.random()*(max-min)+min);
