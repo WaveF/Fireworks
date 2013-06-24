@@ -1,0 +1,21 @@
+var letterNum = prompt("How many Letters in a TextBox?", "10");
+var textboxNum = prompt("How many TextBox you want to create?", "10");
+var offsetY = 0;
+
+for(var i=0; i<textboxNum; i++){
+	fw.getDocumentDOM().addNewText({left:100, top:offsetY, right:0, bottom:0}, true);
+	fw.getDocumentDOM().setFillEdgeMode("antialias", 0);
+	fw.getDocumentDOM().setTextCustomAntiAliasSharpness(255);
+	fw.getDocumentDOM().setTextCustomAntiAliasStrength(0);
+	fw.getDocumentDOM().setTextCustomAntiAliasOverSample(4);
+	fw.getDocumentDOM().setTextAntiAliasing("smooth");
+	fw.getDocumentDOM().setTextOrientation("horizontal left to right");
+	for(var j=0; j<=letterNum; j++){		fw.selection[0].textChars += String.fromCharCode(getRandomNum(33,126));
+	}
+	offsetY += fw.selection[0].height;
+}
+
+function getRandomNum(min, max){
+  var num = Math.floor(Math.random()*(max-min)+min);
+  return num;
+}
