@@ -1,0 +1,4 @@
+﻿var dom = fw.getDocumentDOM();
+dom.addNewRectanglePrimitive({left:0, top:0, right:dom.width, bottom:dom.height}, 0);
+dom.ungroup();
+dom.setFillNColor({ category:”fc_Solid”, ditherColors:[ “#000000”, “#000000” ], edgeType:”antialiased”, feather:0, gradient:null, name:”fn_Normal”, pattern:null, shape:”solid”, stampingMode:”blend opaque”, textureBlend:0, webDitherTransparent:false }, “#eeeeee”);
