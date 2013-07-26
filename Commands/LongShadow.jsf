@@ -7,7 +7,7 @@ if(sel.length>0){
 	}
 	var initRight = sel[0].x + sel[0].width;
 	
-	var userData = prompt("Please enter Long-Shadow's\ndarkness(0-100), blur(0-10), opacity(0-100):", "100, 3, 60");
+	var userData = prompt("Please enter Long-Shadow's\ndarkness(0-100), blur(0-10), opacity(0-100):", "10, 1, 40");
 	userData = userData.replace(" ", "");
 	var userDataArray = userData.split(",");
 	var $darkness = userDataArray[0];
