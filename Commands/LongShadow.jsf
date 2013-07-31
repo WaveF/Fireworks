@@ -3,20 +3,20 @@ var sel = fw.selection;
 
 if(sel.length>0){
 	if(sel.length>1){
-		dom.group("normal");
+		dom.group('normal');
 	}
 	var initRight = sel[0].x + sel[0].width;
 	
-	var userData = prompt("Please enter Long-Shadow's\ndarkness(0-100), blur(0-10), opacity(0-100):", "10, 1, 40");
-	userData = userData.replace(" ", "");
-	var userDataArray = userData.split(",");
+	var userData = prompt('Please enter LongShadow\'s\ndarkness(0-100), blur(0-10), opacity(0-100):', '10, 1, 40');
+	userData = userData.replace(' ', '');
+	var userDataArray = userData.split(',');
 	var $darkness = userDataArray[0];
 	var $blur = userDataArray[1];
 	var $opacity = userDataArray[2];
 	
-	var shadowAttr = prompt("Shadow steps, distanceX and distanceY:", "20, 40, 40");
-	shadowAttr = shadowAttr.replace(" ", "");
-	shadowAttrArray = shadowAttr.split(",")
+	var shadowAttr = prompt('Shadow steps, distanceX and distanceY:', '20, 40, 40');
+	shadowAttr = shadowAttr.replace(' ', '');
+	shadowAttrArray = shadowAttr.split(',');
 	var $step = Number(shadowAttrArray[0]);
 	var $distanceX = shadowAttrArray[1];
 	var $distanceY = shadowAttrArray[2];
@@ -36,22 +36,22 @@ if(sel.length>0){
 	
 	for(var i=0; i<=distance; i=i+distance/$step){
 		dom.cloneSelection();
-		dom.applyEffects({ category:"UNUSED", effects:[ { Blendmode:0, Color:"#000000", EffectIsVisible:true, EffectMoaID:"{dd54adc0-a279-11d3-b92a000502f3fdbe}", Opacity:$darkness, category:"Adjust Color", name:"Color Fill" }, { EffectIsVisible:true, EffectMoaID:"{d04ef8c0-71b3-11d1-8c8200a024cdc039}", MB_filter_preview_tile_size:"-1 -1", category:"Blur", gaussian_blur_radius:$blur, name:"Gaussian Blur..." } ], name:"UNUSED" });
-		dom.arrange("back");
+		dom.applyEffects({ category:'UNUSED', effects:[ { Blendmode:0, Color:'#000000', EffectIsVisible:true, EffectMoaID:'{dd54adc0-a279-11d3-b92a000502f3fdbe}', Opacity:$darkness, category:'Adjust Color', name:'Color Fill' }, { EffectIsVisible:true, EffectMoaID:'{d04ef8c0-71b3-11d1-8c8200a024cdc039}', MB_filter_preview_tile_size:'-1 -1', category:'Blur', gaussian_blur_radius:$blur, name:'Gaussian Blur...' } ], name:'UNUSED' });
+		dom.arrange('back');
 		dom.setOpacity(100-i/distance*100);
 		dom.moveSelectionBy({x:$offsetX, y:$offsetY}, false, false);
 		
 		newSel.push(fw.selection[0]);
 	}
 	fw.selection = newSel;
-	dom.group("normal");
+	dom.group('normal');
 	dom.flattenSelection();
 	dom.setOpacity($opacity);
 	
 	finSel.push(fw.selection[0]);
 	finSel.push(initSel[0]);
 	fw.selection = finSel;
-	dom.group("normal");
+	dom.group('normal');
 }else{
-	alert("You must select at least one object.");
+	alert('You must select at least one object.');
 }
