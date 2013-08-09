@@ -1,29 +1,3 @@
-﻿var mkDir = Files.createDirectory(fw.appDir + '/Configuration/Commands/UiWork');
-var installPath = fw.appDir + '/Configuration/Commands/UiWork/SwitchPics.swf';
-var installed = Files.exists(installPath);
-var cnSuccess = "安装成功，请重启 Fireworks！\n\n请通过 命令菜单 -> UiWork -> SwitchPics 使用本扩展";
-var enSuccess = "Install successful, Please restart Fireworks!\n\nAccess this command from Menu:\nCommands -> UiWork ->  SwitchPics";
-var cnError = "发生未知错误，安装失败，请手动将本 SWF 文件复制到 Fireworks 安装目录下的 Configuration/Commands 文件夹中";
-var enError = "Install fail, unknown reason, please copy this swf file to Fireworks Commands folder manually.";
-var successStr = "";
-var errorStr = "";
-var lang = Files.getLanguageDirectory();
-if(lang.indexOf("/Simplified%20Chinese") >= 0){
-    successStr = cnSuccess;
-    errorStr = cnError;
-}else{
-    successStr = enSuccess;
-    errorStr = enError;
-}
-if (!installed) {
-    var installSuccessful = Files.copy(fw.currentScriptDir + '/' + fw.currentScriptFileName, installPath);
-    if (installSuccessful) {
-        alert(successStr);
-    } else {
-        alert(errorStr);
-    }
-}
-
 var dom = fw.getDocumentDOM();
 var sel = fw.selection;
 if (sel.length > 1) {
@@ -58,12 +32,12 @@ if (sel.length > 1) {
                     nonLabelNameArray.push(newName);
                 }
             } else {
-if(fw.selection[0].name==null){
-dom.setElementName(fw.selection[0].textChars);
-labelNameArray.push(fw.selection[0].textChars);
+                if(fw.selection[0].name==null){
+                    dom.setElementName(fw.selection[0].textChars);
+                    labelNameArray.push(fw.selection[0].textChars);
                 }else{
-dom.setElementName(fw.selection[0].name);
-labelNameArray.push(fw.selection[0].name);
+                    dom.setElementName(fw.selection[0].name);
+                    labelNameArray.push(fw.selection[0].name);
                 }
                 labelArray.push(fw.selection[0]);
                 labelTextArray.push(fw.selection[0].textChars);
@@ -96,7 +70,7 @@ labelNameArray.push(fw.selection[0].name);
         var SymbolFolder = fw.userJsCommandsDir;
         SymbolFolder = SymbolFolder.replace("Commands", "Common Library/Custom Symbols/");
         if (!Files.exists(SymbolFolder)) {
-            Files.createDirectory(SymbolFolder);
+            Files.createDirectory(SymbolFolder)
         }
         var SymbolPath = SymbolFolder + SymbolName + ".graphic.png";
         Files.deleteFileIfExisting(SymbolPath);
@@ -112,7 +86,7 @@ labelNameArray.push(fw.selection[0].name);
         var jsFile = Files.open(jsPath, true);
         var jsFileText = "";
         jsFileText += "function setDefaultValues(){var values = new Array();values.push({ name:'State', type:'ComboBox', value:'";
-        jsFileText += optionNames;
+        jsFileText += optionNames.substr(0, optionNames.length-1);
         jsFileText += "'});"
         jsFileText += labelNames;
         jsFileText += "Widget.elem.customData['currentValues'] = values;}function applyCurrentValues(){var v = Widget.elem.customData['currentValues'];var state = v[0].value.split(',')[0].toString();";
