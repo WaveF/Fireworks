@@ -1,0 +1,4 @@
+http://img.ui.cn/data/file/1/2/4/157421.jpg
+http://img.ui.cn/data/file/1/5/9/157951.png
+
+fw.getDocumentDOM().changeCurrentPage(fw.getDocumentDOM().currentPageNum);}

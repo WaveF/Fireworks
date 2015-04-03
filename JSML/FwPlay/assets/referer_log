@@ -1,0 +1,11 @@
+http://localhost:81/index.html?4348 -> /refresh.js
+http://localhost:81/index.html?4348 -> /offset.js
+http://localhost:81/index.html?4348 -> /image.png
+http://localhost:81/index.html?4348 -> /image.png
+http://localhost:81/index.html?4612 -> /refresh.js
+http://localhost:81/index.html?4612 -> /offset.js
+http://localhost:81/index.html?4612 -> /image.png
+http://localhost:81/index.html?4612 -> /image.png
+http://localhost:81/index.html -> /refresh.js
+http://localhost:81/index.html -> /offset.js
+http://localhost:81/index.html -> /image.png

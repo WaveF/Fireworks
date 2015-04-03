@@ -1,0 +1,243 @@
+// Fireworks AutoShape
+// Install by copying to Fireworks/Configuration/AutoShapes/
+// Run in Fireworks via the Window > AutoShapes
+// 2008 Aaron Beall - http://abeall.com
+// Version 1.3
+
+/* TODO
+- [DONE-v1.2] add inner radius value
+- get rid of center point node completely
+- [DONE-v1.3] control of spacing between rays
+- [DONE-v1.3] completely redo rays handle so its position reflects the incremental angle of the rays, thus making a more intutive experience
+- [PARTLY DONE - code done v1.3, but no UI for it] make "inverted" mode that creates a new contour for each ray, so they aren't joined in the center
+*/
+
+var dom = fw.getDocumentDOM();
+
+var mouse = smartShape.currentMousePos;
+var cps = smartShape.elem.controlPoints;
+var data = smartShape.elem.customData;
+
+var DEFAULT_RADIUS = 250, DEFAULT_RAYS = 25, DEFAULT_INNER_RADIUS = 0, DEFAULT_RAY_SPACING = .5;
+var MIN_RADIUS = 10, MIN_RAYS = 2, MAX_RAYS = 200, MAX_RAY_ANGLE = 45;
+var CP_PADDING = 5; 
+
+var operation = new Object();
+operation.InsertSmartShapeAt = function(){
+	
+	// create initial sunburst
+	data.shapeName = "sunburst";
+	data.rays = DEFAULT_RAYS;
+	data.radius = DEFAULT_RADIUS;
+	data.inner_radius = DEFAULT_INNER_RADIUS;
+	data.ray_spacing = DEFAULT_RAY_SPACING;
+	createSunburst(mouse,data.radius,data.inner_radius,data.rays);
+	
+	// control points
+	cps.length = 5;
+	SetControlPoint(cps[3], mouse, "Origin", "Origin");
+	//CP("Origin").type =  'crossHair';
+	CP("Origin").visible = false;
+	SetControlPoint(cps[1], AddPoints(mouse,{x:0,y:-DEFAULT_RADIUS}), "Radius", "Radius");
+	SetControlPoint(cps[2], AddPoints(mouse,{x:15,y:-DEFAULT_RADIUS}), "Rays", "Rays; Drag to change, click to set");
+	SetControlPoint(cps[0], CP("Origin"), "Inner Radius", "Inner Radius");
+	SetControlPoint(cps[4], AddPoints(mouse,{x:15/2,y:-DEFAULT_RAY_SPACING}), "Spacing", "Ray Spacing; Drag to change, click to set");
+	
+	// set the ray control point to where it should be
+	setRayControlPoints();
+}
+operation.BeginDragControlPoint = function(){
+	data._click = true;
+	var parms = smartShape.GetDefaultMoveParms();
+	var cp = smartShape.currentControlPoint;
+	switch(cp.name){
+		case "Origin":
+			//CP("Origin").RegisterMove(parms);
+			//CP("Radius").RegisterMove(parms);
+			//CP("Rays").RegisterMove(parms);
+			break;
+		case "Radius":
+			parms.maxLinear = CP('Inner Radius').y-cp.y-MIN_RADIUS;
+			cp.RegisterLinearMove({x:CP('Origin').x,y:CP('Origin').y},parms);
+			break;
+		case "Rays":
+			parms.maxAngle = AddPoints(CP('Origin'),{x:CP_PADDING,y:-data.radius})
+			parms.minAngle = AddPoints(CP('Origin'),{x:0,y:data.radius});
+			cp.RegisterCircularMove({x:CP('Origin').x,y:CP('Origin').y},parms);
+			break;
+		case "Spacing":
+			parms.maxAngle = AddPoints(CP('Origin'),{x:0,y:-data.radius})
+			//parms.minAngle = {x:CP('Rays').x,y:CP('Rays').y};
+			var a = getAngle(CP('Origin'),CP('Rays'));
+			parms.minAngle = getCircle(CP('Origin'),data.radius,(a/2)/360-.25);
+			cp.RegisterCircularMove({x:CP('Origin').x,y:CP('Origin').y},parms);
+			break;
+		case "Inner Radius":
+			parms.minLinear = CP('Inner Radius').y - CP('Origin').y;
+			parms.maxLinear = CP('Inner Radius').y - CP('Radius').y - CP_PADDING;
+			cp.RegisterLinearMove({x:CP('Radius').x,y:CP('Radius').y},parms);
+			break;
+	}
+	smartShape.getsDragEvents = true;
+}
+operation.DragControlPoint = function(){
+	data._click = false;
+	var parms = smartShape.GetDefaultMoveParms();
+	var cp = smartShape.currentControlPoint;
+	switch(cp.name){
+		case "Radius":
+			data.radius = CP('Origin').y - cp.y;
+			updateRayControlPoints();
+			createSunburst(CP('Origin'),data.radius,data.inner_radius,data.rays);
+			break;
+		case "Rays":
+			data._angle = getAngle(CP('Origin'),cp);
+			//data.rays = Math.floor((MAX_RAYS-MIN_RAYS)*((MAX_RAY_ANGLE-data._angle)/MAX_RAY_ANGLE))+MIN_RAYS;
+			data.rays = Math.round(360/data._angle);
+			data.rays = Math.min(MAX_RAYS,Math.max(MIN_RAYS,data.rays));
+			createSunburst(CP('Origin'),data.radius,data.inner_radius,data.rays);
+			updateRayControlPoints();
+			break;
+		case "Spacing":
+			var spacingAngle = getAngle(CP('Origin'),CP('Spacing'));
+			data.ray_spacing = spacingAngle/(data._angle/2);
+			createSunburst(CP('Origin'),data.radius,data.inner_radius,data.rays);
+			break;
+		case "Inner Radius":
+			data.inner_radius = CP("Origin").y - CP("Inner Radius").y;
+			createSunburst(CP('Origin'),data.radius,data.inner_radius,data.rays);
+			break;
+	}
+}
+
+operation.EndDragControlPoint = function(){
+	var cp = smartShape.currentControlPoint;
+	if(data._click){
+		switch(cp.name){
+			case "Rays":
+				var rays = prompt("Number of Rays("+MIN_RAYS+"-"+MAX_RAYS+"):",data.rays);
+				if(!isNaN(Number(rays)) && rays!=null)
+					data.rays = Math.min(Math.max(Number(rays),MIN_RAYS),MAX_RAYS)
+				break;
+			case "Spacing":
+				var spacing = prompt("Spacing percentage between rays(0-100):",Math.round(data.ray_spacing*10000)/100);
+				if(spacing!=null  && !isNaN(Number(spacing)))
+					data.ray_spacing = Math.min(Math.max(Number(spacing)/100,0),1);
+				break;
+		}
+		createSunburst(CP('Origin'),data.radius,data.inner_radius,data.rays);
+	}
+	setRayControlPoints();
+	//smartshape.elem.elements[0].pathAttributes.fillHandle1 = {x:0,y:0}; // test
+}
+
+SetNodePosition = function(node, pt){
+	SetBezierNodePosition(node, pt,pt,pt);
+}
+SetBezierNodePosition = function(node, ptp, pt, pts){
+	node.predX	= ptp.x;	node.predY	= ptp.y;
+	node.x		= pt.x;		node.y		= pt.y;
+	node.succX	= pts.x;	node.succY	= pts.y;
+}
+SetControlPoint = function(cp, pt, name, toolTip){
+	cp.x = pt.x;
+	cp.y = pt.y;
+	cp.name = name;
+	cp.toolTip = toolTip;
+}
+AddPoints = function(pt1, pt2){
+	return {x:pt1.x + pt2.x, y:pt1.y + pt2.y};
+}
+
+CP = function(name){
+	for(c in cps){
+		if(cps[c].name == name)
+			return cps[c];
+	}
+	return false;
+}
+
+if (operation[smartShape.operation]) operation[smartShape.operation]();
+
+// happiness and sunshine...
+function createSunburst(center,radius,innerRadius,rays){
+	rays = Math.min(Math.max(MIN_RAYS,rays),MAX_RAYS)
+	var elems = smartShape.elem.elements;
+	if(elems[0] != '[object Path]'){
+		elems.length = 0;
+		elems[0] = new Path();
+		elems[0].contours[0] = new Contour();
+		elems[0].contours[0].isClosed = true;
+	}
+	elems[0].contours[0].nodes.length = rays*3;
+	for(var i=0; i<rays; i++)
+		createRay(center,radius,innerRadius,rays,i);
+}
+function createRay(center,radius,innerRadius,rays,i){
+	
+	/* // inverted
+	var elem = smartShape.elem.elements[0];
+	elem.contours.length = i+1;
+	elem.contours[i] = new Contour();
+	elem.contours[i].isClosed = true;
+	elem.contours[i].nodes.length = 3;
+	
+	var nods = elem.contours[i].nodes;
+	var percent = i/rays;
+	var offset = 1/rays;
+	var pt = getCircle(center,innerRadius,percent-.25);
+	var p1 = getCircle(center,radius,percent-offset/(2/data.ray_spacing)-.25);
+	var p2 = getCircle(center,radius,percent+offset/(2/data.ray_spacing)-.25);
+	SetNodePosition(nods[0], pt);
+	SetNodePosition(nods[1], p1);
+	SetNodePosition(nods[2], p2);*/
+	
+	var nods = smartShape.elem.elements[0].contours[0].nodes;
+	var percent = i/rays;
+	var offset = 1/rays;
+	var pt = getCircle(center,innerRadius,percent-offset/2-.25);
+	var p1 = getCircle(center,radius,percent-offset/(2/data.ray_spacing)-.25);
+	var p2 = getCircle(center,radius,percent+offset/(2/data.ray_spacing)-.25);
+	SetNodePosition(nods[i*3], pt);
+	SetNodePosition(nods[i*3+1], p1);
+	SetNodePosition(nods[i*3+2], p2);
+}
+
+// set the ray control points position based on params
+function setRayControlPoints(){
+	// rays
+	//var percent = 1 - (data.rays-MIN_RAYS)/(MAX_RAYS-MIN_RAYS);
+	//percent = Math.max(0,percent);
+	var pt = getCircle(CP('Origin'),data.radius,(360/data.rays)/360-.25);
+	pt.x = Math.max(CP("Radius").x+CP_PADDING,pt.x);
+	SetNodePosition(CP("Rays"), pt);
+	data._angle = getAngle(CP('Origin'),CP("Rays"));
+	
+	// spacing
+	updateRayControlPoints();
+}
+
+// update the ray control points position based on params and precalculated angle
+function updateRayControlPoints(){
+	// rays
+	var percent = (data._angle/360)-.25;
+	var pt = getCircle(CP('Origin'),data.radius,percent);
+	pt.x = Math.max(CP("Radius").x+CP_PADDING,pt.x);
+	CP("Rays").x = pt.x;
+	CP("Rays").y = pt.y;
+	
+	// spacing
+	percent = Math.min(1,Math.max(0,percent));
+	var pt = getCircle(CP('Origin'),data.radius-CP_PADDING,data.ray_spacing*((data._angle/2)/360)-.25);
+	SetNodePosition(CP("Spacing"), pt);
+}
+
+// get a point around a circle from 0 to 1
+function getCircle(center,radius,time){
+	return {x:center.x + radius*Math.cos(2*Math.PI*time), y:center.y + radius*Math.sin(2*Math.PI*time)};
+}
+
+// get the angle in degrees between two points
+function getAngle(p1,p2){
+	return -Math.atan2((p1.x-p2.x), (p1.y-p2.y))/(Math.PI/180);
+}

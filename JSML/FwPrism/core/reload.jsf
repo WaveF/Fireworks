@@ -1,0 +1,12 @@
+//var panelName = "FwPrism";
+
+//fw.setFloaterVisibility(panelName, false);
+//fw.setFloaterVisibility(panelName, true);
+
+//fw.toggleFloater(panelName);
+//fw.toggleFloater(panelName);
+
+fw.setHideAllFloaters(true);
+fw.setHideAllFloaters(false);
+
+//fw.setFloaterPosition(panelName, {left:72, top:79, right:236, bottom:228})

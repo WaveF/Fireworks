@@ -1,0 +1,3 @@
+var f;
+if(f!=1){ alert('This is a message for you.\n\nby WaveF') }
+f=1;

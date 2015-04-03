@@ -1,0 +1,79 @@
+﻿if(fw.getDocumentDOM()){};
+var sel = fw.selection;
+
+if(sel.length == 0){
+	alert("你必须绘画/选择一个对象来作为参考");
+}else{
+
+	if(sel.length > 1){
+		alert("所选参考对象多于1个，将采用第1个对象的尺寸进行参考");
+	}
+
+	fw.getDocumentDOM().setBrushNColor({ alphaRemap:"none", angle:0, antiAliased:true, aspect:100, blackness:0, category:"bc_Pencil", concentration:100, dashOffSize1:2, dashOffSize2:2, dashOffSize3:2, dashOnSize1:8, dashOnSize2:1, dashOnSize3:1, diameter:2, feedback:"brush", flowRate:0, maxCount:15, minSize:1, name:"bn_1-Pixel Anti-Aliased", numDashes:0, shape:"circle", softenMode:"bell curve", softness:0, spacing:15, textureBlend:0, textureEdge:0, tipColoringMode:"random", tipCount:1, tipSpacing:0, tipSpacingMode:"random", type:"simple" }, "#00bfff");
+	fw.getDocumentDOM().setFill(null);
+	fw.getDocumentDOM().setBrushPlacement("inside");
+
+	for(var k=0; k<sel.length; k++){
+		if(k>0){
+			fw.selection = sel[k];
+			fw.getDocumentDOM().deleteSelection(false);
+		}
+	}
+
+
+	var initX = sel[0].left;
+	var initY = sel[0].top;
+
+	var maxWidth = sel[0].width;
+	var maxHeight = sel[0].height;
+	var userDatePromptString = "参考尺寸为：" + maxWidth + "×" + maxHeight + " px，请输入您希望生成的列数：";
+	var columnNum = prompt(userDatePromptString, "8");
+	
+	if(columnNum != null){
+		var tips = "根据【总宽度 = " + maxWidth + "，列数 = " + columnNum + "】，您可以采用的完美列宽方案如下：\n\n";
+		var plan = 1;
+		var planParamsArray = [];
+
+		for(var boxWidth=20; boxWidth<=800; boxWidth++){
+			for(var padding=1; padding<=100; padding++){
+				if(boxWidth*columnNum + padding*columnNum-padding == maxWidth){
+					if(plan<10){
+						tips += "　【方案 " + plan + "】 列宽 = " + boxWidth + "，间距 = " + padding + "\n";
+					}else{
+						tips += "　【方案" + plan + "】 列宽 = " + boxWidth + "，间距 = " + padding + "\n";
+					}
+					plan++;
+					planParamsArray.push([boxWidth, padding]);
+				}
+			}
+		}
+
+		if(plan > 1){
+			tips += "\n\n提示：请记下您想采用的方案序号，并输入接下来的对话框中...";
+			alert(tips);
+
+
+			var userPlanID = prompt("您想采用的方案序号是：", "1");
+			
+			if(userPlanID != null){
+				if(userPlanID > (planParamsArray.length)){
+					alert("超出方案总数，将采用最后一个方案");
+					userPlanID = planParamsArray.length;
+				}
+				fw.getDocumentDOM().deleteSelection(false);
+				fw.getDocumentDOM().selectNone();
+
+				for(var i=0; i<columnNum; i++){
+					fw.getDocumentDOM().addNewRectanglePrimitive({left:0, top:0, right:planParamsArray[userPlanID-1][0], bottom:maxHeight}, 0);
+					fw.getDocumentDOM().setFillNColor({ category:"fc_Solid", ditherColors:[ "#000000", "#000000" ], edgeType:"antialiased", feather:0, gradient:null, name:"fn_Normal", pattern:null, shape:"solid", stampingMode:"blend opaque", textureBlend:0, webDitherTransparent:false }, "#00bfff");
+					fw.getDocumentDOM().moveSelectionBy({x:initX+i*(planParamsArray[userPlanID-1][0]+planParamsArray[userPlanID-1][1]), y:initY}, false, false);
+					fw.getDocumentDOM().setOpacity(100);
+				}
+			}
+		}else{
+			alert("无可用方案");
+		}
+	}else{
+		alert("用户取消操作");
+	}
+}

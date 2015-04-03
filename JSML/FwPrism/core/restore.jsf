@@ -1,0 +1,5 @@
+var targetPath = fw.currentScriptDir.replace(/\/FwPrism\/core/g,'/FwPrism');
+var targetFilePath = targetPath + "/FwPrism.js";
+Files.deleteFileIfExisting(targetFilePath);
+Files.copy(targetPath+"/core/prism.js", targetFilePath);
+fw.launchApp(fw.appDir+((fw.platform=="win")?"/Fireworks.exe":"/Adobe Fireworks CS6.app"), [targetPath+"/core/reload.jsf"]);
