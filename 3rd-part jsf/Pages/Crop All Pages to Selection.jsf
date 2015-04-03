@@ -1,0 +1,51 @@
+/* ===========================================================================
+	
+	File: Crop All Pages
+
+	Author - John Dunning
+	Copyright - 2010 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 0.2.3 ($Revision: 1.1 $)
+	Last update - $Date: 2010/02/20 20:10:46 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function()
+{
+	if (fw.documents.length < 1) {
+			// no documents are open
+		return;
+	}
+
+	var dom	= fw.getDocumentDOM();
+	var cropBounds = null;
+	
+	if (dom.isPaintMode) {
+			// use the bounds of the current marquee selection to crop
+		cropBounds = dom.getSelectionBounds();
+		dom.exitPaintMode();
+	} else if (fw.selection.length > 0) {
+			// we'll use the bounds of the selected objects to crop the pages
+		cropBounds = dom.getSelectionBounds();
+	}
+
+	if (cropBounds) {
+			// pass false to apply the crop to all pages
+		dom.setDocumentCanvasSize(cropBounds, false);
+	} else {
+		alert("Before running this command, either select the elements around\nwhich the pages should be cropped or use the bitmap marquee\ntool to select the crop area.");
+	}
+})();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

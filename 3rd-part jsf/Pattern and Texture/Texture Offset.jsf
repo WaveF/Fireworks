@@ -1,0 +1,48 @@
+// Fireworks JavaScript Command
+// Fireworks/Configuration/Commands/
+
+var dom = fw.getDocumentDOM(); // document object
+var sel = [].concat(fw.selection); // saved selection
+
+function TextureOffset(){
+	
+	if(!dom)
+		return false;
+	
+	var textured = [];
+	for(var s in sel){
+		if(sel[s].textureOffset)
+			textured.push(sel[s]);
+	}
+	if(!textured.length)
+		return alert("Select a path with texture fill.");
+	
+	var input;
+	do{
+		input = prompt('Enter texture offset x,y:', textured[0].textureOffset.x + ',' + textured[0].textureOffset.y);
+	}while(!validate());
+	function validate(){
+		if(input == null)
+			return true;
+		input = input.split(',');
+		if(input.length != 2)
+			return false;
+		input[0] = Number(input[0]);
+		input[1] = Number(input[1]);
+		if(isNaN(input[0]) || isNaN(input[1]))
+			return false;
+		return true;
+	}
+	if(input == null)
+		return false;
+	
+	for(var s in sel){
+		//sel[s].textureOffset.x = input[0];
+		//sel[s].textureOffset.y = input[1];
+		sel[s].textureOffset = {x:input[0], y:input[1]};
+	}
+}
+
+try{
+TextureOffset()
+}catch(err){ alert([e.lineNumber, e, e.fileName]); }

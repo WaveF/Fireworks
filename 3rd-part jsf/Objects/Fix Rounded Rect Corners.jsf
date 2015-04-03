@@ -1,0 +1,130 @@
+/* ===========================================================================
+
+	File: Fix Rounded Rectangle
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 1.0.2 ($Revision: 1.4 $)
+	Last update - $Date: 2009/09/26 19:13:16 $
+
+   ======================================================================== */
+
+
+/*
+	Usage:
+
+	While the rounded rectangle tool is handy, it's not very flexible.  Once
+	you've created a rectangle with rounded corners, you can't easily resize
+	the rectangle without distorting the rounded corners.  You can scale the
+	rectangle proportionally, but then the corners will have a different 
+	radius, which is generally not the desired effect.  Or you can sub-select 
+	the corner points and drag them to a new position, but that's also an 
+	awkward solution.
+
+	This command eliminates these problems by fixing distorted rounded corners.
+	After you create a rounded rectangle, adjust the Roundness value to set
+	the corners to the desired size.  Then use the Scale tool to freely resize 
+	the	rectangle, or use the Info panel to change the size numerically.  (Just
+	don't subselect the corners and move them; that will cause this command to 
+	stop working.)  
+
+	After resizing the rounded rectangle (and thereby distorting its rounded 
+	corners), select it and run this command.  The rectangle's corners will be 
+	re-rounded according to their original pixel radius.  The Roundness 
+	percentage will be different, since the rectangle's size has changed.  You 
+	can select more than one rectangle and run this command on all of them.  
+	You may find it convenient to assign a keyboard shortcut to the command.
+
+*/
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function()
+{
+	var dom	= fw.getDocumentDOM();
+
+		// make sure one or more rectangles have been selected
+	if (typeof fw.selection != "undefined" && fw.selection.length > 0) { 
+			// make a copy of the selection so we can restore it later
+		var originalSelection = [].concat(fw.selection);
+		var alertShown = false;
+
+		for (var i = 0; i < originalSelection.length; i++) {
+			var element = originalSelection[i];
+
+				// ignore everything but the currently selected object
+			if (typeof element.originalSides == "undefined") {
+				if (element.customData.shapeName == "rectangle" && !alertShown) {
+					alert("This command cannot fix the corners of this shape because it was created with the \nRounded Rectangle tool, rather than the standard Rectangle tool.");
+					alertShown = true;
+				}
+
+				continue;
+			}
+
+				// get the current size of the element
+			fw.selection = [element];
+			var selBounds = dom.getSelectionBounds();
+
+			var elementHasGradient = (element.pathAttributes.fill &&
+				element.pathAttributes.fill.gradient);
+
+			if (elementHasGradient) {
+					// there's a gradient, so we have to copy the element so we
+					// can later paste its attributes back, to restore the gradient
+				dom.clipCopy();
+			}
+
+				// take off the rounded corner distortions
+			dom.removeTransformation();
+			element = fw.selection[0];
+
+				// figure out a new roundness value so the rect will have the 
+				// same pixel radius at the corners as it originally did.  the 
+				// pixel width is determined by the rect's shortest side
+			var width = element.originalSides.right - element.originalSides.left;
+			var height = element.originalSides.bottom - element.originalSides.top;
+			var oldShortestSide = (width < height) ? width : height;
+			var radius = oldShortestSide * element.roundness;
+
+				// get the new shortest side so we can figure out the new roundness
+			width = selBounds.right - selBounds.left;
+			height = selBounds.bottom - selBounds.top;
+			var newShortestSide = (width < height) ? width : height;
+
+			var newRoundness = radius / newShortestSide;
+
+				// set the undistorted rectangle to the right size
+			element.originalSides = selBounds;
+
+				// set the new, corrected roundness
+			element.roundness = newRoundness;
+
+				// removing the transformation moved the object, so move it back
+			dom.moveSelectionTo({ x: selBounds.left, y: selBounds.top }, false, false);
+
+			if (elementHasGradient) {
+					// paste the attributes back to restore the gradient handle,
+					// which has been messed up by removing the transformation
+				dom.clipPasteAttributes();
+			}
+
+				// copy the changed element back into the selection array
+			originalSelection[i] = fw.selection[0]; 
+		}
+
+		fw.selection = originalSelection;
+	}
+})();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

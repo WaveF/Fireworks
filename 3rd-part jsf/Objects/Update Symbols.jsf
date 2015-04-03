@@ -1,0 +1,63 @@
+// ===========================================================================
+//
+//  Update Symbols.jsf
+//
+//  Copyright 2003 John Dunning.  All rights reserved.
+//
+//  fireworks@johndunning.com	http://johndunning.com/fireworks/
+//
+//  version 1.0.0 - 2/25/2003 12:56 PM
+//
+// ===========================================================================
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+main();
+
+function main()
+{
+	var filePaths = fw.chooseScriptTargetDialog(["PNG"]); 
+
+	if (filePaths == null) {
+		return;
+	}
+
+	for (var i = 0; i < filePaths.length; i++) {
+			// see if this file is already open
+		var dom = fw.findOpenDocument(filePaths[i]);
+		var docWasOpened = false;
+
+		if (dom == null) {
+				// it's not open now, so open it
+			dom = fw.openDocument(filePaths[i]);
+
+			if (dom == null) {
+					// we couldn't find it, so skip it
+				continue;
+			}
+
+			docWasOpened = true;
+		}
+
+			// pass null to update all the symbols
+		dom.updateSymbol(null);
+		dom.redraw();
+
+			// to force the file to update its preview we have to save it, close
+			// it, re-open it, and then save it again.  it will be closed again 
+			// if we had originally opened it.
+		dom.save(true);
+		dom.close(false);
+
+		dom = fw.openDocument(filePaths[i]);
+		dom.save(true);
+
+		if (docWasOpened) {	
+				// now that we're done with this file, we can close it
+			dom.close(false);
+		}
+	}
+}

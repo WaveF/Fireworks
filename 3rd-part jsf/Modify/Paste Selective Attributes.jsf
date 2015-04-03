@@ -1,0 +1,149 @@
+// Fireworks JavaScript Command
+// Pastes selective attributes from your clipboard
+// Install by copying to Fireworks/Configuration/Commands/
+// Aaron Beall 2009-2011 - http://abeall.com
+// Version 1.1
+
+/* TODO
+- add text attributes option
+- include fill handles in the operation
+- create a SWF interface with checkboxes
+*/
+
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+// test
+/*dom.clipPaste();
+var obj = fw.selection[0];
+var oldObjects = [].concat(fw.selection);
+
+for(var i in sel){
+	fw.selection = sel[i];
+	dom.setFillColor(obj.pathAttributes.fillColor);
+	dom.setBrushColor(obj.pathAttributes.brushColor);
+	dom.setFill(obj.pathAttributes.fill);
+	dom.setBrush(obj.pathAttributes.brush);
+}*/
+
+function PasteSelectiveAttributes(){
+	if(!sel.length) return false;
+	
+	// user input
+	var input, opts = {};
+	do{
+		input = prompt('Selective attributes to paste:\n[F]ill, Fill [C]olor, [S]troke, St[r]oke Color, [O]pacity, [B]lendmode, [E]ffects (Filters)', fw.PasteSelectiveAttributes_input || 'FC');
+		if(input == null)
+			return false;
+	}while(!validate());
+	function validate(){
+		opts.input = input.toUpperCase();
+		
+		opts.fill = opts.input.indexOf('F') != -1;
+		opts.fillColor = opts.input.indexOf('C') != -1;
+		opts.stroke = opts.input.indexOf('S') != -1;
+		opts.strokeColor = opts.input.indexOf('R') != -1;
+		opts.opacity = opts.input.indexOf('O') != -1;
+		opts.blendmode = opts.input.indexOf('B') != -1;
+		opts.effects = opts.input.indexOf('E') != -1;
+		
+		if(!opts.fill && !opts.fillColor && !opts.stroke && !opts.strokeColor && !opts.opacity && !opts.blendmode && !opts.effects)
+			return alert('Invalid input!');
+		return true;
+	}
+	fw.PasteSelectiveAttributes_input = input;
+	
+	// paste current clipboard
+	dom.clipPaste("ask user", "vector");
+	var pasteSel = [].concat(fw.selection);
+	if(!pasteSel.length){
+		return alert("Unable to read clipboard contents!");
+	}else if(pasteSel.length > 1){
+		fw.selection = pasteSel.slice(1);
+		dom.deleteSelection(false);
+		fw.selection = pasteSel[0];
+	}
+	var obj = fw.selection[0];
+	
+	// paste all specified attributes
+	var s = sel.length;
+	while(s--){
+		fw.selection = sel[s];
+		
+		// path attributes
+		if(obj.pathAttributes && sel[s].pathAttributes){
+		
+			// fill
+			if(opts.fill)
+				dom.setFill(obj.pathAttributes.fill);
+			
+			// fill color
+			if(opts.fillColor && sel[s].pathAttributes.fill)
+				dom.setFillColor(obj.pathAttributes.fillColor);
+			
+			// stroke
+			if(opts.stroke)
+				dom.setBrush(obj.pathAttributes.brush);
+			
+			// stroke color
+			if(opts.strokeColor && sel[s].pathAttributes.brush)
+				dom.setBrushColor(obj.pathAttributes.brushColor);
+				
+		}
+		
+		// opacity
+		if(opts.opacity)
+			dom.setOpacity(obj.opacity);
+		
+		// blendmode
+		if(opts.blendmode)
+			dom.setBlendMode(obj.blendMode);
+		
+		// filters
+		if(opts.effects)
+			dom.applyEffects(obj.effectList);
+	}
+	
+	// cleanup
+	fw.selection = [obj];
+	dom.deleteSelection(false);
+	fw.selection = sel;
+}
+
+PasteSelectiveAttributes();
+
+// return a fill object
+/*function getFill(fill){
+	return {
+		category:fill.category, 
+		ditherColors:fill.ditherColors, 
+		edgeType:fill.edgeType, 
+		feather:fill.feather, 
+		gradient:fill.gradient, 
+		name:fill.name, 
+		pattern:fill.pattern, 
+		shape:fill.shape, 
+		stampingMode:fill.stampingMode, 
+		textureBlend:fill.textureBlend, 
+		webDitherTransparent:fill.webDitherTransparent
+	}
+}
+
+// return a gradient copy
+function getGradient(gradient){
+	if(!gradient) return null;
+	var grad = {};
+	grad.nodes = [];
+	for(var n in gradient.nodes)
+		grad.nodes[n] = {position:gradient.nodes[n].position,color:gradient.nodes[n].color};
+	grad.opacityNodes = [];
+	for(var n in gradient.opacityNodes)
+		grad.opacityNodes[n] = {position:gradient.opacityNodes[n].position,color:gradient.opacityNodes[n].color};
+	return grad;
+}
+
+// return a pattern copy
+function getPattern(pattern){
+	if(!pattern) return null;
+	return {name:pattern.name,image:pattern.image};
+}*/

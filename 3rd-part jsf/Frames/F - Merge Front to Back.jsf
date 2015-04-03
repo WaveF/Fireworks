@@ -1,0 +1,47 @@
+/* ===========================================================================
+	
+	File: F - Merge Front to Back
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 1.1.1 ($Revision: 1.3 $)
+	Last update - $Date: 2009/02/22 23:30:03 $
+
+   ======================================================================== */
+
+
+/* ===========================================================================
+
+	Usage:
+
+	The "Distribute to Frames" command will distribute the selected elements to
+	frames, one element per frame.  The "Frames - Merge Back-Front"
+	command performs the inverse: it merges all the frames in the document on
+	to one frame, putting the contents of the last frame on top.  The remaining
+	frames are deleted.
+
+	The "Frames - Merge Front-Back" command does the same thing, but
+	puts the contents of the first frame on the top, and that of the last 
+	frame on the bottom.
+
+   =========================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+(function ()
+{
+	if (typeof jdlib == "undefined" || typeof jdlib.mergeFrames != "function") {
+		fw.runScript(fw.currentScriptDir + "/lib/Merge.js"); 
+	}
+
+	var dom	= fw.getDocumentDOM();
+
+		// merge the frames with the first one on top
+	jdlib.mergeFrames(0, dom.frames.length - 1);
+})();

@@ -1,0 +1,174 @@
+/* ===========================================================================
+	
+	Smart Ungroup.jsf
+
+	Copyright 2012 John Dunning.  All rights reserved.
+	fw@johndunning.com
+	http://johndunning.com/fireworks
+
+   ======================================================================== */
+
+
+// ===========================================================================
+try { (function() {
+	if (!fw.selection || fw.selection.length == 0) {
+		return;
+	}
+
+	var k = {
+			AttributesToSave: {
+				blendMode: 1,
+				opacity: 1,
+				name: 1
+			}
+		},
+		dom = fw.getDocumentDOM(),
+		element = fw.selection[0],
+		properties = element.customData.SmartUngroup,
+		groupData,
+		group,
+		key; 
+
+		// see if the first selected element was previously part of a group. we do
+		// this before checking whether the selection is a group because otherwise,
+		// we wouldn't be able to select a subgroup and then run the command to regroup
+		// it with its siblings; it would itself break into subelements.  but this
+		// also means there's no way to smart ungroup a subgroup that is part of
+		// another group that's been smart ungrouped.  
+	if (properties) {
+			// select the other elements in the current layer that were part of
+			// the same group
+		fw.selection = findElementsByCustomData(properties.id);
+
+			// we don't need to add parens around the JSON since groupData is
+			// an object, and toSource() returns a string with parens
+		groupData = eval(properties.groupData);
+		
+		if (fw.selection.length) {
+				// null out the SmartUngroup from the elements' customData so that
+				// we don't leave it lying around
+			forEach(fw.selection, function(element) {
+				element.customData.SmartUngroup = undefined;
+			});
+
+				// recreate the group
+			dom.group();
+			group = fw.selection[0];
+			
+			for (key in groupData.attributes) {
+				group[key] = groupData.attributes[key];
+			}
+
+			for (key in groupData.customData) {
+				group.customData[key] = groupData.customData[key];
+			}
+		}
+	} else if (element.elements) {
+			// this is a group, so save its attributes on its children before 
+			// ungrouping
+		group = fw.selection[0];
+		
+		properties = { 
+			id: (new Date()).getTime(),
+			groupData: {
+				attributes: {},
+				customData: null 
+			}
+		};
+		groupData = properties.groupData;
+		
+			// save the scalar attributes
+		for (key in k.AttributesToSave) {
+			groupData.attributes[key] = group[key];
+		}
+
+			// we need to save a copy of these objects, since saving a reference to
+			// the original and then deleting the group can cause all sorts of problems.
+		if (group.effectList) {
+			groupData.attributes.effectList = copyObject(group.effectList);
+		}
+
+		if (group.customData) {
+				// if we just store a reference to the customData object and
+				// then convert groupData to source, FW dies
+			groupData.customData = copyObject(group.customData);
+		}
+
+			// convert the group data to JSON, so that we can reliably store it
+			// across saves, since deeply nested objects on customData get 
+			// converted to strings when the file is reopened
+		properties.groupData = groupData.toSource();
+
+			// ungroup the object 
+		fw.selection = [group];
+		dom.ungroup();
+		
+			// add the group attributes as customData to all of the children so that
+			// we can recreate the group later if any of them are selected
+		forEach(fw.selection, function(element) {
+			element.customData.SmartUngroup = properties;
+		});
+	}
+
+
+	// =======================================================================
+	function forEach(obj, iterator, context) {
+		if (obj == null) return;
+		if (obj.length === +obj.length) {
+			for (var i = 0, l = obj.length; i < l; i++) {
+					// i in obj seems to be false when it's an array extracted
+					// from customData
+				if (iterator.call(context, obj[i], i, obj) === false) return;
+			}
+		} else {
+			for (var key in obj) {
+				if (hasOwnProperty.call(obj, key)) {
+					if (iterator.call(context, obj[key], key, obj) === false) return;
+				}
+			}
+		}
+	}
+
+
+	// =======================================================================
+	function filter (obj, iterator, context) {
+		var results = [];
+		if (obj == null) return results;
+
+		forEach(obj, function(value, index, list) {
+			if (iterator.call(context, value, index, list)) results[results.length] = value;
+		});
+		return results;
+	}
+
+
+	// =======================================================================
+	function copyObject(
+		inObject)
+	{
+		if (typeof inObject == "object" && inObject !== null) {
+			return eval("(" + inObject.toSource() + ")");
+		} else {
+			return inObject;
+		}
+	}
+
+
+	// =======================================================================
+	function findElementsByCustomData(
+		inValue)
+	{
+		var layerElements = dom.layers[dom.currentLayerNum].frames[dom.currentFrameNum].elements;
+			
+		return filter(layerElements, function(element) {
+			return element.customData.SmartUngroup && 
+				element.customData.SmartUngroup.id == inValue;
+		});
+	}
+})(); } catch (exception) {
+	if (exception.lineNumber) {
+		alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+	} else {
+		throw exception;
+	}
+}

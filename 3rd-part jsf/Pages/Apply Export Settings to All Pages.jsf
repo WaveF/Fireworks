@@ -1,0 +1,68 @@
+/* ===========================================================================
+	
+	File: Apply Export Settings to All Pages
+
+	Author - John Dunning
+	Copyright - 2007 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 0.2.0 ($Revision: 1.2 $)
+	Last update - $Date: 2008/10/07 08:55:19 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function()
+{
+	if (fw.documents.length == 0) {
+		return;
+	}
+	
+	
+	function cloneObject(
+		inObject)
+	{
+		return eval("(" + inObject.toSource() + ")");
+	}
+	
+
+	var dom	= fw.getDocumentDOM();
+	var currentPage = dom.currentPageNum;
+
+		// clone the current page's exportOptions, settings and matte color
+	var exportOptions = cloneObject(dom.exportOptions);
+	var exportSettings = cloneObject(dom.exportSettings);
+	var matteColor = dom.matteColor;
+
+	for (var i = 0, len = dom.pagesCount; i < len; i++) {
+		if (i == currentPage) {
+			continue;
+		}
+		
+		dom.changeCurrentPage(i);
+		dom	= fw.getDocumentDOM();
+	        
+			// suggested by Bradley Looy: preserve the local page's frame info
+			// by cloning its frameInfo object before setting export options
+		exportOptions.frameInfo = cloneObject(dom.exportOptions.frameInfo);
+		
+		dom.setExportOptions(exportOptions);
+		dom.setExportSettings(exportSettings);
+		dom.setMatteColor(true, matteColor);
+	}
+	
+		// go back to the page the user started on
+	dom.changeCurrentPage(currentPage);
+}
+)();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

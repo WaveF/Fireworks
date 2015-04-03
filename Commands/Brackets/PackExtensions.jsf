@@ -1,0 +1,71 @@
+/*
+miniCG.com
+by WaveF
+PackExtensions v1.0 Fireworks commands for Brackets
+
+* INSTALLATION:
+  copying this file to
+
+  Windows:
+  C:\Program Files (x86)\Adobe\Adobe Fireworks CS5\Configuration\Commands
+
+  OSX:
+  /Applications/Adobe Fireworks CS5/Configuration/Commands
+
+* RUN
+  access the command through Commands > Brackets > PackExtensions
+
+* MANAGE COMMANDS
+  use 'Manage Saved Commands...' from Commands menu to delete existing commands
+
+*/
+
+var os = fw.platform;
+
+(function(){
+	if(os!="win"){
+		alert("This command only support Windows!");
+		return;
+	}else{
+	
+		var sysFolder = (fw.appPrefsDir).replace('/Adobe/Fireworks%20CS6','');
+		var bracketsPath = sysFolder + '/Brackets/extensions/user';
+		
+		var bakFolder = fw.browseForFolderURL('Choose the backup file path:','file:///C|');
+		
+		if(Files.exists(bracketsPath)){
+			var batchFilePath = fw.currentScriptDir + "/packExt.bat";
+			Files.deleteFileIfExisting(batchFilePath);
+			Files.createFile(batchFilePath, "TEXT", "????");
+			var batchFile = Files.open(batchFilePath, true);
+			var batchFileText = '@echo off\ncls\n' + convertURLToOSPath(fw.currentScriptDir+'\\rar.exe', true) + ' a -k -r -s -m5 ' + convertURLToOSPath(bakFolder+'/BkExt.rar', true) + ' ' + convertURLToOSPath(bracketsPath, true);
+			batchFile.write(batchFileText);
+			batchFile.close();
+			
+			fw.launchApp(batchFilePath, []);
+		}else{
+			alert("Can't find Brackets extension foler!");
+		}
+	}
+	
+	function convertURLToOSPath(inURL, quote){
+		if(!inURL){return}
+		if (os == "win") {
+		  /*  // replace file:///C| with C: and turn / into \  */
+		  var path = inURL.replace(/file:\/\/\/(.)\|/, "$1:");
+		  path = path.replace(/\//g, "\\");
+		} else {
+		  /*  // replace file:/// with /Volumes/  */
+		  var path = "/Volumes" + inURL.replace(/file:\/\//, "");
+		}
+		// we also have to convert the URL-encoded chars back into normal chars
+		// so that the OS can handle the path, and quote the path in case it
+		// contains spaces
+		if(quote){
+			return '"' + unescape(path) + '"';
+		}else{
+			return unescape(path);
+		}
+	}
+
+})();

@@ -1,0 +1,56 @@
+/*
+Fireworks CS5 JavaScript Command
+Randomizes the rotation of selected elements
+Install by copying to Fireworks/Configuration/Commands/
+Aaron Beall 2011 - http://abeall.com
+Version 1.0
+*/
+
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+function RandomizeRotation() {
+	
+	// Require active document
+	if(!fw.documents.length)
+		return false;
+	
+	// Require selection
+	if(!sel.length)
+		return alert("Unable to randomize; please select some objects.");
+	
+	// User input
+	var input, rotation;
+	do{
+		input = prompt("Enter amount rotation randomization, in degrees: ", fw.RandomizeRotation_input || "360");
+		if(!input)
+			return;
+	}while(!validate());
+	function validate(){
+		rotation = Number(input);
+		if(isNaN(rotation))
+			return alert("Invalid input; enter numbers only.");
+		return true;
+	}
+	
+	// Store input
+	fw.RandomizeRotation_input = rotation;
+	
+	// Apply random rotation to elements
+	for(var s = 0; s < sel.length; s++){
+		var elem = sel[s];
+		fw.selection = [elem];
+		dom.rotateSelection(-rotation * .5 + Math.random() * rotation, "autoTrimImages transformAttributes");
+		sel[s] = fw.selection[0];
+	}
+	
+	// Restore selection
+	fw.selection = sel;
+	
+	// Command success
+	return true;
+}
+
+try{
+RandomizeRotation();
+}catch(e){alert([e.lineNumber, ":", e, e.fileName])};

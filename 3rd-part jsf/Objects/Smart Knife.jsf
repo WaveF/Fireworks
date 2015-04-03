@@ -1,0 +1,353 @@
+/* ===========================================================================
+	
+	File: Smart Knife
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 0.2.0 ($Revision: 1.4 $)
+	Last update - $Date: 2009/07/22 03:05:05 $
+
+   ======================================================================== */
+
+
+/*
+	To do:
+		- can get a negative error if the cutter path doesn't extend fully 
+			outside the target bounds
+			
+		- preserve grouping
+			
+		- half of the paths on lower layers are moved to the cutter's layer
+			it's because they're pasted
+			maybe should clone instead to preserve layers
+			
+	Done:
+		- bitmaps sometimes seem to move on top of paths
+			because they're cut and then pasted
+*/
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function()
+{
+	var errorMessage = "To use this command, you must select 2 or more overlapping objects. The topmost object should be an open path, which will be used to cut the bottommost objects.";
+	
+	if (fw.selection.length < 2) {
+		alert(errorMessage);
+		return;
+	}
+
+	var dom = fw.getDocumentDOM();
+	var originalSelection = [].concat(fw.selection);
+	var cutter = originalSelection[0];
+	var targets = originalSelection.slice(1);
+	
+	if (getElementType(cutter) != "Path" || cutter.contours[0].isClosed) {
+		alert(errorMessage);
+		return;
+	}
+
+		// store the two halves of the cut elements in separate arrays
+	var result = [[], []];
+	
+		// get the bounds while the cutter path is still selected, since we want 
+		// the cutter shapes to be bigger than the original path
+	var bounds = dom.getSelectionBounds();
+	var expandedBounds = {
+		top: bounds.top - 5,
+		right: bounds.right + 5,
+		bottom: bounds.bottom + 5,
+		left: bounds.left - 5
+	};
+	
+		// separate the bitmaps from the paths, and convert things like text and
+		// auto shapes to plain paths
+	var convertedElements = convertToPathAndBitmap(targets);
+	var pathTargets = convertedElements[0]
+	var bitmapTargets = convertedElements[1];
+	
+	var firstPoint = cutter.contours[0].nodes[0];
+	var lastPoint = cutter.contours[0].nodes[cutter.contours[0].nodes.length - 1];
+	var pathIsReversed = false;
+	var xSides, ySides, firstPointConnector, lastPointConnector;
+
+		// figure out how far from horizontal the line is
+	var horizonAngle = -Math.atan2((lastPoint.y - firstPoint.y), (lastPoint.x - firstPoint.x));
+
+		// check if the angle is within the vertical range (1/4 pi rads to 3/4 pi rads)
+	if (Math.abs(horizonAngle) > Math.PI / 4 && Math.abs(horizonAngle) < (3 * Math.PI) / 4) {
+			// the line is mostly vertical
+		pathIsReversed = firstPoint.y > lastPoint.y;
+
+		firstPointConnector = { x: (pathIsReversed ? lastPoint : firstPoint)["x"], y: expandedBounds.top };
+		lastPointConnector = { x: (pathIsReversed ? firstPoint : lastPoint)["x"], y: expandedBounds.bottom };
+
+		xSides = ["left", "left", "right", "right"];
+		ySides = ["top", "bottom", "top", "bottom"];
+	} else {
+			// the line is mostly horizontal
+		pathIsReversed = firstPoint.x > lastPoint.x;
+
+		firstPointConnector = { x: expandedBounds.left, y: (pathIsReversed ? lastPoint : firstPoint)["y"] };
+		lastPointConnector = { x: expandedBounds.right, y: (pathIsReversed ? firstPoint : lastPoint)["y"] };
+
+		xSides = ["left", "right", "left", "right"];
+		ySides = ["top", "top", "bottom", "bottom"];
+	}
+	
+		// close the contour first, as doing it after appending to the path
+		// causes negative errors 
+	cutter.contours[0].isClosed = true;
+	
+		// create a copy of the cutter path, since we want to end up with two
+		// shapes, one for each side of the path
+	fw.selection = [cutter];
+	dom.cloneSelection();
+	var cutterShapes = [cutter, fw.selection[0]];
+	
+	cutterShapes[0] = createCutterShapes(
+		cutterShapes[0],
+		[
+			firstPointConnector,
+			{ x: expandedBounds[xSides[0]], y: expandedBounds[ySides[0]] },
+			{ x: expandedBounds[xSides[1]], y: expandedBounds[ySides[1]] },
+			lastPointConnector
+		],
+		pathIsReversed
+	);
+	
+	cutterShapes[1] = createCutterShapes(
+		cutterShapes[1],
+		[
+			firstPointConnector,
+			{ x: expandedBounds[xSides[2]], y: expandedBounds[ySides[2]] },
+			{ x: expandedBounds[xSides[3]], y: expandedBounds[ySides[3]] },
+			lastPointConnector
+		],
+		pathIsReversed
+	);
+
+	if (bitmapTargets.length) {
+			// clone the first bitmap target so that after cutting all the bitmaps,
+			// we still have a placeholder that we can select before pasting
+			// them so that the layering is maintained
+		fw.selection = [bitmapTargets[0]];
+		dom.cloneSelection();
+		var layerTarget = fw.selection[0];
+		
+			// cut the targets to the clipboard so we can paste them back in the
+			// loop below, once for each cutter shape 
+		fw.selection = bitmapTargets;
+		dom.clipCut();
+		
+		var marqueeMode = 1;
+		var feather = 0;
+		
+		if (cutter.pathAttributes.brush && cutter.pathAttributes.brush.antiAliased) {
+			marqueeMode = 2;
+		} 
+		
+		for (var i = 0; i < cutterShapes.length; i++) {
+			saveMarqueeSelection(cutterShapes[i], marqueeMode, feather);
+			
+			fw.selection = [layerTarget];
+			dom.clipPaste("do not resample", "vector");
+			bitmapTargets = fw.selection;
+			
+			for (var j = 0; j < bitmapTargets.length; j++) {
+					// select the bitmap and restore the default marquee selection
+				fw.selection = [bitmapTargets[j]];
+				dom.restoreSelection();
+				
+					// deleting the selection will "punch" the bitmap
+				dom.deleteSelection(false);
+				dom.exitPaintMode();
+		
+				result[i] = result[i].concat(fw.selection);
+			}
+		}
+		
+			// we no longer need the cloned target element, so get rid of it
+		fw.selection = [layerTarget];
+		dom.deleteSelection(false);
+	}
+	
+	if (pathTargets.length) {
+			// make a copy of the targets so we can paste them back later
+			// to punch them with the other side of the cutter line
+		fw.selection = pathTargets;
+		dom.clipCopy();
+		
+		fw.selection = [].concat(fw.selection, cutterShapes[0]);
+		dom.pathPunch();
+		result[0] = result[0].concat(fw.selection);
+		
+			// now punch the other side of the cutter line
+		dom.clipPaste("do not resample", "vector");
+		fw.selection = [].concat(fw.selection, cutterShapes[1]);
+		dom.pathPunch();
+		result[1] = result[1].concat(fw.selection);
+	} else {
+			// if we have paths, the cutter shapes would get consumed during the 
+			// punch operation.  but since we don't, delete them now so they're
+			// not left lying around.  
+		fw.selection = cutterShapes;
+		
+			// despite what the freaking docs say, the parameter to deleteSelection
+			// is NOT optional, even though we're not currently in bitmap mode
+		dom.deleteSelection(false);
+	}	
+	
+		// group the two sets of cut up pieces and leave the top or left half 
+		// selected, but only if there's more than one element in each half
+	fw.selection = result[0];
+	if (fw.selection.length > 1) {
+		dom.group();
+	}
+	
+	fw.selection = result[1];
+	if (fw.selection.length > 1) {
+		dom.group();
+	}
+	
+	
+	function createCutterShapes(
+		inCutterPath,
+		inPoints,
+		inPathIsReversed)
+	{
+		fw.selection = [inCutterPath];
+		
+		if (inPathIsReversed) {
+			inPoints.reverse();
+		}
+		
+		for (var i = 0; i < inPoints.length; i++) {
+			dom.appendPointToPath(0, 0, inPoints[i], inPoints[i], inPoints[i]);
+		}
+		
+		return fw.selection[0];
+	}
+	
+	
+	function saveMarqueeSelection(
+		inElement,
+		inMarqueeMode,
+		inFeather)
+	{
+		inFeather = inFeather || 0;
+		
+			// make a copy of the element, since it's consumed during the 
+			// convertPathToMarquee operation, and we want to still have a copy 
+			// for splitting the target paths after we're done with the bitmaps
+		fw.selection = [inElement];
+		dom.cloneSelection();
+		
+		dom.convertPathToMarquee(inMarqueeMode, inFeather);
+		dom.saveSelection();
+		dom.exitPaintMode();
+	}
+	
+	
+	function convertToPathAndBitmap(
+		inElements)
+	{
+			// ungroup everything in inElements, subgroups and all
+		fw.selection = [].concat(inElements);
+		do {
+			var selectionCount = fw.selection.length;
+			dom.ungroup();
+		} while (fw.selection.length != selectionCount);
+	
+			// recreate the elements array, since we may have a different selection
+			// of objects now
+		var elements = [].concat(fw.selection);
+		var paths = [];
+		var bitmaps = [];
+	
+			// go through each element and convert it to either a plain path or bitmap
+		for (var i = 0, len = elements.length; i < len; i++) {
+			var element = elements[i];
+			var elementType = getElementType(element);
+			var effectList;
+	
+			switch (elementType) {
+				case "Image":
+						// save bitmaps separately
+					bitmaps.push(element);
+					break;
+	
+				case "Text":
+						// convert text elements to a path union
+					fw.selection = [element];
+					
+						// save any effects applied to the text, since converting
+						// it to paths will cause them to be lost
+					if (element.effectList) {
+							// clone the effects object
+						effectList = eval("(" + element.effectList.toSource() + ")");
+					} else {
+						effectList = null;
+					}
+					
+					dom.convertToPaths();
+					dom.ungroup();
+					dom.pathUnion();
+					
+					if (effectList) {
+							// reapply the saved effects
+						dom.applyEffects(effectList);
+					}
+					
+					paths.push(fw.selection[0]);
+					break;
+	
+				case "Path":
+					if (!element.contours[0].isClosed) {
+							// unclosed paths don't work with dom.pathUnion, so
+							// turn it into a bitmap
+						fw.selection = [element];
+						dom.flattenSelection();
+						bitmaps.push(fw.selection[0]);
+					} else {
+						paths.push(element);
+					}
+					break;
+	
+				case "Instance":
+					fw.selection = [element];
+					dom.flattenSelection();
+					bitmaps.push(fw.selection[0]);
+					break;
+	
+				default:
+						// assume it's a path and save it
+					paths.push(element);
+					break;
+			}
+		}
+		
+		return [paths, bitmaps];
+	}
+	
+	
+	function getElementType(
+		inElement)
+	{
+		var type = (inElement + "").match(/object (.+)\]/)[1];
+		
+		return (type == "Group" && inElement.isSmartShape) ? "SmartShape" : type;
+	}
+})()
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

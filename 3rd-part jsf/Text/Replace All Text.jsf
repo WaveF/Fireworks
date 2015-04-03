@@ -1,0 +1,10 @@
+var dom = fw.getDocumentDOM();
+
+var txt = prompt('Enter text to populate all selected text fields. Use "{T}" for original text.',txt||'{T}');
+
+for(var s in fw.selection){
+	if(fw.selection[s] == '[object Text]')
+		fw.selection[s].textChars = txt.split('{T}').join(fw.selection[s].textChars);
+}
+
+dom.changeCurrentPage(dom.currentPageNum); // force screen refresh

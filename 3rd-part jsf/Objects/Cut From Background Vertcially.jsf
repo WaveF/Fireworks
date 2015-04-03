@@ -1,0 +1,32 @@
+/* ===========================================================================
+	
+	File: Cut From Background Vertically
+
+	Author - John Dunning
+	Copyright - 2011 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 0.2.0 ($Revision: 1.1 $)
+	Last update - $Date: 2011/04/25 00:17:34 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function() {
+		// load the Fill With Background Utils if necessary
+	try { jdlib.FillWithBackground.fill; } catch (e)
+		{ fw.runScript(fw.currentScriptDir + "/Fill With Background Utils.js"); }
+
+	jdlib.FillWithBackground.fill(true, "bottom");
+})();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

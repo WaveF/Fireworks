@@ -1,0 +1,88 @@
+// Fireworks JavaScript Command
+// Copy to Fireworks/Configuration/Commands/
+// Aaron Beall - http://abeall.com
+// Version 1.0
+// Requires Fireworks CS3+
+
+var dom = fw.getDocumentDOM(); // document object
+var sel = new Array().concat(fw.selection); // saved selection
+
+function SplitSelectedText(){
+	if (!sel.length) return false;
+	
+	var selIndex = fw.textInsertionIndex;
+	var selLength = fw.textInsertionLength;
+	
+	if(selIndex == -1)
+		return alert("Please select some text. This command will split the text box into two or three text boxes based on the text selection.");
+	
+	var newSel = [];
+	splitTextAt(fw.selection[0],selIndex);
+	if(selLength>0){
+		newSel.pop();
+		splitTextAt(fw.selection[0],selLength);
+	}
+	fw.selection = newSel;
+	
+	// split a text block into two based on an index
+	function splitTextAt(text,index){
+		
+		// duplicate into two text blocks
+		fw.selection = [text];
+		dom.cloneSelection();
+		var newText = fw.selection[0];
+		
+		// trim first text block
+		fw.selection = [text];
+		var runs = fw.selection[0].textRuns, charCount = 0, chars;
+		for(var r=0; r<runs.textRuns.length; r++){
+			charCount += runs.textRuns[r].characters.length;
+			if(charCount > index){
+				chars = runs.textRuns[r].characters;
+				runs.textRuns[r].characters = chars.substring(0,index-(charCount-chars.length));
+				runs.textRuns.length = r+1;
+				break;
+			}
+		}
+		fw.selection[0].textRuns = runs;
+		var height = 0;
+		if(fw.selection[0].textChars = ""){
+			dom.deleteSelection(false);
+		}else{
+			height = fw.selection[0].height;
+			newSel.push(fw.selection[0]);
+		}
+		
+		// trim second text block
+		fw.selection = [newText];
+		dom.moveSelectionBy({x:0,y:height},false,false);
+		var runs = fw.selection[0].textRuns, charCount = 0, chars;
+		for(var r=0; r<runs.textRuns.length; r++){
+			charCount += runs.textRuns[r].characters.length;
+			if(charCount > index){
+				chars = runs.textRuns[r].characters;
+				runs.textRuns[r].characters = chars.substr(index-(charCount-chars.length));
+				break;
+			}else{
+				runs.textRuns[r].characters = "";
+			}
+		}
+		fw.selection[0].textRuns = runs;
+		if(fw.selection[0].textChars = ""){
+			dom.deleteSelection(false);
+		}else{
+			newSel.push(fw.selection[0]);
+		}
+	}
+	
+	return true;
+}
+
+SplitSelectedText();
+
+function mergeAttrs(attrs1, attrs2){
+	for(var i in attrs2){
+		attrs1[i] = attrs2[i];
+	}
+	return attrs1;
+}

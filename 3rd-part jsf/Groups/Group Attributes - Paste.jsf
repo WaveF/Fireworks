@@ -1,0 +1,244 @@
+/* ===========================================================================
+	
+	Group Attributes - Paste.jsf
+
+	Copyright 2012 John Dunning.  All rights reserved.
+	fw@johndunning.com
+	http://johndunning.com/fireworks
+
+   ======================================================================== */
+
+
+// ===========================================================================
+try { (function() {
+	jdlib = jdlib || {};
+	
+	var gElementMismatchCount = 0;
+	
+	if (fw.documents.length < 1) {
+			// no documents are open
+		return;
+	}
+
+	if (fw.selection.length < 1) {
+			// nothing's selected
+		return;
+	}
+
+		// convert the saved style info from a string back into an array
+	var objectStyles = jdlib.gCurrentObjectStyles;
+
+	if (!objectStyles) {
+			// there's no saved style, or something else went wrong, so bail
+		alert("To paste group attributes you must first select a group and run 'Group Attributes - Copy'.");
+
+		return;
+	}
+
+	var dom	= fw.getDocumentDOM();
+
+		// make a copy of the selection so we can restore it later
+	var originalSelection = [].concat(fw.selection);
+
+	for (var i = 0; i < originalSelection.length; i++) {
+		var object = originalSelection[i];
+
+			// before applying any styles, go through the entire group and make
+			// sure the element types match those from the copied group
+		var objectMatches = verifyObjectStructure(object, objectStyles);
+
+		if (typeof objectMatches == "object" && objectMatches.length == 0) {
+				// if this object didn't match, verifyObjectStructure() would 
+				// have returned false, rather than an empty array
+			var object = originalSelection[i];
+
+			applyObjectStyles(originalSelection[i], objectStyles);
+
+				// the current object has been transformed in various ways, so 
+				// we need to save a pointer to the new object in the 
+				// originalSelection array.  otherwise, we'll get errors when 
+				// we try to reselect the original selection below.
+			originalSelection[i] = fw.selection[0];
+		}
+	}
+
+		// now that we're done applying the styles, restore the original selection.
+		// otherwise, some sub-selement will be left selected.
+	fw.selection = originalSelection;
+
+	if (gElementMismatchCount) {
+			// some of the groups don't have the right structure
+		alert("Some of the selected groups do not have the same structure as the original group.");
+	}
+
+
+	// =======================================================================
+	function applyObjectStyles(
+		inObject,
+		inObjectStyles)
+	{
+		if (!inObjectStyles || inObjectStyles.length == 0) {
+				// we've run out of object styles, which probably means the current
+				// group doesn't have the right structure.  so track the mismatch and bail.
+			gElementMismatchCount++;
+			
+			return [];
+		}
+	
+		var dom	= fw.getDocumentDOM();
+		
+		var objectStyles = inObjectStyles;
+	
+		if (inObject.elements) {
+				// this object is a group, so recurse over all of its children
+			for (var i = 0; i < inObject.elements.length; i++) {
+					// each call to applyObjectStyles() should return a shorter 
+					// objectStyles array
+				objectStyles = applyObjectStyles(inObject.elements[i], objectStyles);
+	
+				if (objectStyles.length == 0) {
+					return [];
+				}
+			}
+		}
+	
+		if (objectStyles.length == 0 || objectStyles[0].type != getObjectType(inObject)) {
+				// the current object is not the same type as the one whose styles
+				// we stored.  so track the mismatch and bail.
+			gElementMismatchCount++;
+			
+			return [];
+		}
+	
+		var objectStyle = objectStyles[0];
+	
+			// select the object so we can perform dom operations on it
+		fw.selection = [inObject];
+	
+		switch (objectStyle.type) {
+			case "Text":
+					// apply the saved initial text style to the text block
+				dom.setTextRuns({ initialAttrs: objectStyle.initialAttrs, textRuns: inObject.textRuns.textRuns });
+				dom.setTextAntiAliasing(objectStyle.antiAliasMode);
+				dom.setTextAutoKern(objectStyle.autoKern);
+				dom.setTextCharSpacing(objectStyle.orientation);
+				dom.setTransformMode(objectStyle.transformMode);
+				break;
+	
+			case "RectanglePrimitive":
+				dom.setRectRoundness(objectStyle.roundness);
+				break;
+		}
+	
+			// check whether we need to apply the fill and brush styles
+		if (objectStyle.pathAttributes) {
+				// apply the fill styles 
+			dom.setFillNColorNTexture(objectStyle.pathAttributes.fill, objectStyle.pathAttributes.fillColor, 
+					objectStyle.pathAttributes.fillTexture.name);
+			dom.setFillPlacement(objectStyle.pathAttributes.fillOnTop ? "top" : "bottom");
+	
+				// shift the fill handles from their location in the original group
+				// to a point relative to this object's location
+			var deltaX = inObject.left - objectStyle.left;
+			var deltaY = inObject.top - objectStyle.top;
+	
+			var handles = [objectStyle.pathAttributes.fillHandle1, objectStyle.pathAttributes.fillHandle2, objectStyle.pathAttributes.fillHandle3];
+			for (var i = 0; i < handles.length; i++) {
+				handles[i].x += deltaX;
+				handles[i].y += deltaY;
+			}
+	
+				// apply the shifted fill handles 
+			dom.setFillVector(handles[0], handles[1], handles[2]);
+	
+				// apply the brush styles
+			dom.setBrushNColorNTexture(objectStyle.pathAttributes.brush, objectStyle.pathAttributes.brushColor, 
+					objectStyle.pathAttributes.brushTexture.name);
+			dom.setBrushPlacement(objectStyle.pathAttributes.brushPlacement);
+		}
+	
+			// apply any stored effects to this element
+		if (objectStyle.effectList) {
+			dom.applyEffects(objectStyle.effectList);
+		}
+	
+			// all elements have these attributes.  we can't use the visible attribute
+			// because all elements in a group must have the same value for visible.
+			// setting visible directly on any element causes the whole group to be hidden.
+		dom.setOpacity(objectStyle.opacity);
+		dom.setBlendMode(objectStyle.blendMode);
+	
+			// advance to the next stored object style
+		objectStyles = objectStyles.slice(1);
+	
+		return objectStyles;
+	}
+	
+	
+	// =======================================================================
+	function verifyObjectStructure(
+		inObject,
+		inObjectStyles)
+	{
+		if (!inObjectStyles || inObjectStyles.length == 0) {
+				// we've run out of objectStyles, but we have more objects 
+				// to check, so this group doesn't match the one whose styles
+				// we stored.  so track the mismatch and bail.
+			gElementMismatchCount++;
+	
+			return false;
+		}
+	
+		var objectStyles = inObjectStyles;
+	
+		if (inObject.elements) {
+			for (var i = 0; i < inObject.elements.length; i++) {
+				objectStyles = verifyObjectStructure(inObject.elements[i], objectStyles);
+	
+				if (objectStyles == false) {
+					return false;
+				}
+			}
+		}
+	
+		if (objectStyles.length == 0 || objectStyles[0].type != getObjectType(inObject)) {
+				// the current object is not the same type as the one whose styles
+				// we stored.  so track the mismatch and bail.
+			gElementMismatchCount++;
+			
+			return false;
+		}
+	
+			// if we've gotten here, the current object's type matches the object in the
+			// same place in the original group, so remove it from the objectStyles array
+		objectStyles = objectStyles.slice(1);
+	
+		return objectStyles;
+	}
+	
+	
+	// =======================================================================
+	function getObjectType(
+		inObject)
+	{
+		if (!inObject) {
+			return "";
+		}
+	
+		var objectString = inObject.toString();
+	
+		if (objectString.indexOf("[object ") != 0) {
+				// this appears to not be a Fireworks object
+			return "";
+		} else {
+				// return the object name, not the [object ] part
+			return objectString.slice(8, -1);
+		}
+	}
+})(); } catch (exception) {
+	if (exception.lineNumber) {
+		alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+	} else {
+		throw exception;
+	}
+}

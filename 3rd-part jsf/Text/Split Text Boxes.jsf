@@ -1,0 +1,60 @@
+// Fireworks JavaScript Command
+// Copy to Fireworks/Configuration/Commands/
+// Aaron Beall - http://abeall.com
+// Version 1.0
+
+var dom = fw.getDocumentDOM(); // document object
+var sel = new Array().concat(fw.selection); // saved selection
+
+function SplitTextFields(){
+	if (!sel.length) return false;
+	
+	var origTextFields = [];
+	for (s in sel) {
+		if (sel[s] == '[object Text]' ) {
+			origTextFields.push(sel[s]);
+		}
+	}
+	if (!origTextFields.length) return false;
+	
+	var cleanR = true;//fw.yesNoDialog('Remove leading linebreaks?');
+	
+	var newTextFields = [];
+	for(t in origTextFields){
+		var height = 0;
+		var prevAttrs = false;
+		for(var i=0 ; i<origTextFields[t].textRuns.textRuns.length ; i++){
+			fw.selection = [origTextFields[t]];
+			dom.cloneSelection();
+			var r = fw.selection[0].textRuns;
+			var prevAttrs = mergeAttrs((prevAttrs||r.initialAttrs),origTextFields[t].textRuns.textRuns[i].changedAttrs);
+			r.initialAttrs = prevAttrs;
+			r.textRuns = [origTextFields[t].textRuns.textRuns[i]];
+			if(cleanR && r.textRuns[0].characters.indexOf('\r')==0)
+				r.textRuns[0].characters = r.textRuns[0].characters.substr(1);
+			if(r.textRuns[0].characters.length == 0){
+				dom.deleteSelection(false);
+				continue;
+			}
+			fw.selection[0].textRuns = r;
+			dom.moveSelectionBy({x:0,y:height},false,false);
+			height += fw.selection[0].height;
+			newTextFields.push(fw.selection[0]);
+		}
+	}
+	
+	fw.selection = origTextFields;
+	dom.deleteSelection(false);
+	fw.selection = newTextFields;
+	
+	return true;
+}
+
+SplitTextFields();
+
+function mergeAttrs(attrs1, attrs2){
+	for(var i in attrs2){
+		attrs1[i] = attrs2[i];
+	}
+	return attrs1;
+}

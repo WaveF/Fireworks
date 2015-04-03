@@ -1,0 +1,48 @@
+/* ===========================================================================
+	
+	File: Toggle Opacity
+
+	Author - John Dunning
+	Copyright - 2007 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Version - 0.1.0
+	Last update - 8/31/2007 10:29 AM
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function()
+{
+	if (fw.documents.length < 1 || fw.selection.length < 1) {
+		return;
+	}
+
+	var dom	= fw.getDocumentDOM();
+	var targetOpacity = fw.currentScriptFileName.match(/ (\d+)%\.jsf/)[1];
+
+	if (typeof targetOpacity == "undefined") {
+		return;
+	}
+
+	targetOpacity = parseInt(targetOpacity, 10);
+
+		// round the element's opacity because it's sometimes not a whole number,
+		// even if it looks like one in the UI
+	var setToTarget = (Math.round(fw.selection[0].opacity) != targetOpacity);
+
+	for (var i = 0; i < fw.selection.length; i++) {
+		fw.selection[i].opacity = setToTarget ? targetOpacity : 100;
+	}
+})();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

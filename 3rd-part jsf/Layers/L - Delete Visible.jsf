@@ -1,0 +1,44 @@
+/* ===========================================================================
+	
+	File: L - Delete Visible
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 1.1.1 ($Revision: 1.6 $)
+	Last update - $Date: 2009/02/22 23:30:04 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+	
+(function()
+{
+	if (typeof dojo == "undefined") { fw.runScript(fw.currentScriptDir + "/lib/lib.js"); }
+	dojo.require("fwlib.layers");
+
+	var dom = fw.getDocumentDOM();
+	var topLayers = fwlib.layers.getTopLayerIndexes();
+
+		// we have to delete from the end of the layer list
+	for (var i = topLayers.length - 1; i >= 0; i--) {
+		var index = topLayers[i];
+		
+		if (dom.layers[index].layerType == "normal") {
+			if (dom.frames[dom.currentFrameNum].layers[index].visible) {
+				dom.deleteLayer(index);
+			}
+		}
+	}
+})();
+
+} catch (exception) {
+	alert(exception);
+}

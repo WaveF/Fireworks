@@ -1,0 +1,50 @@
+// Fireworks JavaScript Command
+// Fireworks/Configuration/Commands/
+
+var dom = fw.getDocumentDOM(); // document object
+
+function CreatePatternFromSelection() {
+	// require active document
+	if (!dom) return false;
+	
+	// user input
+	var input, filename, validFilename = new RegExp('^[^\\\./:\*\?\"<>\|]{1}[^\\/:\*\?\"<>\|]{0,254}$');
+	do{
+		input = prompt('Enter a name:', input || '');
+		filename = fw.appTexturesDir + '/' + input;
+	}while(!validate());
+	function validate(){
+		if(input == null)
+			return true;
+		if(!validFilename.exec(input))
+			return alert('Invalid name! Only use names that are valid filenames.');
+		if(Files.exists(filename + '.png'))
+			return fw.yesNoDialog('A texture with this name already exists. Overwrite existing?');
+		return true;
+	}
+	if(input == null)
+		return false;
+	
+	// copy and paste to new document
+	dom.clipCopy();
+	newDom = fw.createDocument();
+	fw.setActiveWindow(newDom);
+	dom = fw.getDocumentDOM();
+	dom.clipPaste();
+	dom.flattenSelection();
+	dom.filterSelection({ EffectMoaID:"{3439b08d-1922-11d3-9bde00e02910d580}", MB_filter_preview_tile_size:"-1 -1", hls_colorize:false, hue_amount:0, lightness_amount:0, saturation_amount:-100 });
+	dom.setDocumentCanvasSizeToDocumentExtents(true);
+	dom.setDocumentCanvasColor("#000000");
+		
+	// export texture to default dir
+	dom.exportTo(filename,{
+		exportFormat:'PNG',
+		colorMode:'24 bit',
+		paletteTransparencyType:'none'
+	});
+	
+	fw.closeDocument(dom, false);
+	alert("Texture has been saved. However, you will need to restart Fireworks for it to appear in the menu, or use the Patterns and Texture panel.");
+}
+
+CreatePatternFromSelection();

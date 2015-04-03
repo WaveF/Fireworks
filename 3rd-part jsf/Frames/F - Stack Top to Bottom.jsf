@@ -1,0 +1,72 @@
+/* ===========================================================================
+	
+	File: F - Stack Top to Bottom
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 1.1.1 ($Revision: 1.2 $)
+	Last update - $Date: 2009/02/22 23:30:04 $
+
+   ======================================================================== */
+
+
+/* ===========================================================================
+
+	To use:
+
+	
+	To do:
+		- skip non exported frames
+			what if first frame is skipped?
+			
+		- export stacked frames 
+
+   =========================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function()
+{
+	var dom	= fw.getDocumentDOM();
+	
+	if (!dom || dom.frames.length == 1) {
+		return;
+	}
+
+	var startingFrame = 1;
+	var endingFrame = dom.frames.length - 1;
+	var cellSize = dom.height;
+	var newCanvasSize = dom.frames.length * cellSize;
+
+	dom.setDocumentCanvasSize({ left: 0, top: 0, right: dom.width, bottom: newCanvasSize });
+
+	for (var i = startingFrame; i <= endingFrame; i++)	{
+//		if (dom.frames[i].visible) {
+//		}
+
+		dom.currentFrameNum = i;
+		
+		dom.selectAll();
+		dom.clipCopy();
+
+		dom.currentFrameNum = 0;
+
+		dom.clipPaste();
+
+			// use moveSelectionBy so that we change only the x position, not the
+			// y, since we want to keep the elements in the same vertical position
+		dom.moveSelectionBy({ x: 0, y: cellSize * i }, false, false);
+	}
+})();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

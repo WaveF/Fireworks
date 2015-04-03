@@ -1,0 +1,105 @@
+/* ===========================================================================
+	
+	File: Distribute Frames to Pages
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 0.2.2 ($Revision: 1.6 $)
+	Last update - $Date: 2009/02/23 01:40:38 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function()
+{
+	if (typeof dojo == "undefined") { fw.runScript(fw.currentScriptDir + "/lib/lib.js"); }
+	dojo.require("fwlib.layers");
+
+	var dom	= fw.getDocumentDOM();
+	var sourcePageDom = dom;
+	
+	dom.changeCurrentPage(0);
+	dom.setPageName(0, dom.frames[0].name);
+	
+	var tree = new fwlib.layers.LayerTree();
+	var topLayers = tree.getTopLayers();
+	
+	if (topLayers[topLayers.length - 1].index != topLayers.length - 1) {
+			// there's a sublayer somewhere
+		alert("This command does not support documents with sublayers.");
+		return;
+	}
+
+	for (var i = 1, len = sourcePageDom.frames.length; i < len; i++) {
+		sourcePageDom.addNewPage();
+		sourcePageDom.setPageName(i, sourcePageDom.frames[i].name);
+
+		sourcePageDom.changeCurrentPage(0);
+		sourcePageDom.currentFrameNum = i;
+
+			// subtract 1 from topLayers.length to not copy the web layer; 
+			// copyLayerBetweenPages won't find it since it'll create a new 
+			// layer "Web Layer 1" which won't match the source "Web Layer".
+		for (j = 0, jlen = topLayers.length - 1; j < jlen; j++) {
+			fwlib.layers.copyLayerBetweenPages(topLayers[j], 0, i);
+		}
+
+			// special case the Web Layer since it's always shared and there can 
+			// be only one, with the same name on each page.
+		var webLayer = topLayers[topLayers.length - 1];
+		dom.changeCurrentPage(0);
+		var webWasLocked = webLayer.isLocked(0);
+		var webWasOpen = webLayer.isOpen();
+		var webWasVisible = webLayer.isVisible();
+
+			// make sure the web layer is unlocked so we can select its contents
+		sourcePageDom.layers[webLayer.index].frames[0].locked = false;
+		dom.selectAllOnLayer(webLayer.index);
+
+			// only do a copy and paste if there's something selected.  otherwise, an
+			// empty layer would cause the previous clipboard to be pasted again.
+		if (fw.selection.length) {
+			dom.clipCopy();
+			dom.selectNone();
+			dom.changeCurrentPage(i);
+			var targetDom = fw.getDocumentDOM();
+			targetDom.clipPaste("do not resample");
+		}
+
+			// change to the current page again (in case there was no selection)
+			// and set the locked, visible and disclosure states for the web layer
+		dom.changeCurrentPage(i);
+		targetDom = fw.getDocumentDOM();
+		
+			// we have get the current page dom's web layer index directly 
+			// instead of using the webLayer object from above since the new page
+			// probably has one more layer than the source page, so webLayer.index
+			// will be off
+		var webLayerIndex = targetDom.layers.length - 1;
+		targetDom.setLayerLocked(webLayerIndex, 0, webWasLocked, false);
+		targetDom.setLayerDisclosure(webLayerIndex, webWasOpen);
+		targetDom.setLayerVisible(webLayerIndex, 0, webWasVisible, false);
+	}
+	
+	sourcePageDom.changeCurrentPage(0);
+	
+		// remove all the frames we just copied to pages
+	sourcePageDom.deleteFrames(1, sourcePageDom.frames.length - 1);
+	
+		// deselect everything, in case anything was left selected from the copying
+		// and pasting
+	sourcePageDom.selectNone();
+})();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

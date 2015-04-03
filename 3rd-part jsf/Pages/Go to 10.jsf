@@ -1,0 +1,36 @@
+/* ===========================================================================
+	
+	File: Go to 1
+
+	Author - John Dunning
+	Copyright - 2007 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Version - 0.1.0
+	Last update - 1/17/2007 1:53 PM
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+(function()
+{
+	if (fw.documents.length == 0) {
+		return;
+	}
+
+	var dom	= fw.getDocumentDOM();
+	var filename = fw.currentScriptFileName;
+	
+		// pull the page number out of the filename
+	var pageNum = filename.match(/(\d{1,2})\.jsf/)[1];
+	
+		// the page numbers are 0-based
+	pageNum = parseInt(pageNum) - 1;
+	
+	dom.changeCurrentPage(pageNum);
+})();

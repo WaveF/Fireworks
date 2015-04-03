@@ -1,0 +1,118 @@
+/* ===========================================================================
+
+	File: Paste in Place
+
+	Author - John Dunning
+	Copyright - 2012 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Thanks to Kleanthis Economou (kleanthis@projectfireworks.com) for the 
+	original implementation, and to Aaron Beall for figuring out how to insert
+	objects into arbitrarily deep sub-groups. 
+
+   ======================================================================== */
+
+
+/*
+	To do:
+		- to support symbols, would need to ungroup the target element's group,
+			delete the target, replace it with the symbol, then group the
+			symbol and the target's original siblings 
+			would have to maintain the name, effects, etc. 
+			maybe turning the target element's topmost gropu into a symbol, 
+				then pasting the replacement into the symbol, then breaking apart
+				the group symbol would work? 
+
+		- make it work with groups on sublayers in CS3.  works in CS5.
+			sometimes does work in CS3, bizarrely
+			looks like it doesn't work if there's more than one frame in the doc
+*/
+
+
+// ===========================================================================
+try { (function() {
+	if (fw.documents.length < 1) {
+			// no documents are open
+		return;
+	}
+
+	if (fw.selection.length < 1) {
+		return;
+	}
+
+	var dom	= fw.getDocumentDOM(),
+			// we'll replace each selected element with the clipboard contents
+		originalSelection = [].concat(fw.selection),
+			// we'll store each instance of the clipboard contents in this array and
+			// select them when we're done.  we can't just restore the originalSelection
+			// array because those elements have been replaced, possibly with multiple
+			// elements for each original element.
+		pastedElements = [];
+
+		// wrap the clipboard contents in a group so that we can handle bitmaps.
+		// otherwise, pasting the bitmap as a vector mask completely confuses
+		// it and its X,Y coords get all messed up.  pasting mask groups wouldn't
+		// work without a group wrapper either.  and do this *before* the
+		// loop below (duh); otherwise the clipboard contents get wrapped in
+		// another group for each selected element.
+	dom.clipPaste("do not resample", null);
+	var pastedElement = fw.selection[0];
+	dom.group("normal");
+	dom.clipCut();
+
+	for (var i = 0; i < originalSelection.length; i++) {
+		var element = originalSelection[i],
+			elementX = element.left,
+			elementY = element.top;
+
+			// group the element we're replacing in case it's a mask.  if we don't,
+			// the clipPasteAsMask below will fail.  we don't need to ungroup this
+			// temp group because it's deleted below.
+		fw.selection = [element];
+		dom.group();
+
+			// the Aaron Beall Sub-group Paste as Mask Technique(tm).  
+			// unfortunately, this doesn't seem to work when pasting a symbol.
+			// the symbol just won't go into the group. 
+		dom.clipPasteAsMask("do not resample", "vector", "add");
+		dom.ungroup();
+
+			// the pasted element is now the first object in the selection
+		pastedElement = fw.selection[0];
+		
+			// and the original element is the second in the selection, unless 
+			// we're pasting a symbol, in which case only the pasted symbol is 
+			// selected.  so if the there's more than one element selected, 
+			// refresh the link to the original element that we're replacing.
+		if (fw.selection.length > 1) {
+			element = fw.selection[1];
+		}
+
+			// delete the element we're replacing.  we have to do this after pasting
+			// the replacement so that it goes into the same layer as the original. 
+		fw.selection = [element];
+		dom.deleteSelection(false);
+		
+		fw.selection = [pastedElement];
+
+			// we have to use moveSelectionTo to move the pasted element, because
+			// just setting its left and top doesn't seem to work
+		dom.moveSelectionTo({ x: elementX, y: elementY }, false, false);
+		
+			// remove the extra group we created around the clipboard contents
+		dom.ungroup();
+
+			// store the pasted clipboard contents so we can reselect it when
+			// the loop is finished 
+		pastedElements = pastedElements.concat(fw.selection);
+	}
+
+	fw.selection = pastedElements;
+})(); } catch (exception) {
+	if (exception.lineNumber) {
+		alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+	} else {
+		throw exception;
+	}
+}

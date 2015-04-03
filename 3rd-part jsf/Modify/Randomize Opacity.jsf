@@ -1,0 +1,77 @@
+/*
+Fireworks CS5 JavaScript Command
+Randomizes the opacity of selected elements
+Install by copying to Fireworks/Configuration/Commands/
+Aaron Beall 2011 - http://abeall.com
+Version 1.1
+*/
+
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+function RandomizeOpacity() {
+	
+	// Require active document
+	if(!fw.documents.length)
+		return false;
+	
+	// Require selection
+	if(!sel.length)
+		return alert("Unable to randomize; please select some objects.");
+	
+	// User input
+	var input, opacityMin, opacityMax, opacityOffset;
+	do{
+		input = prompt("Enter the opacity range (0-100) to randomize to, or a single value for amount of random opacity offset:", fw.RandomizeOpacity_input || "0-100");
+		if(!input)
+			return;
+	}while(!validate());
+	function validate(){
+		var args = String(input).split("-");
+		if(args.length == 1){
+			opacityOffset = Number(args[0]);
+			opacityMin = opacityMax = 0;
+		}else{
+			opacityMin = Number(args[0]);
+			opacityMax = Number(args[1]);
+			opacityOffset = 0;
+		}
+		if(isNaN(opacityMin) || isNaN(opacityMax) || isNaN(opacityOffset))
+			return alert("Invalid input; enter numbers only.");
+		return true;
+	}
+	
+	// Analyze input
+	opacityMin = Math.min(Math.max(opacityMin, 0), 100);
+	opacityMax = Math.min(Math.max(opacityMax, 0), 100);
+	if(opacityMin > opacityMax){
+		var o = opacityMin;
+		opacityMin = opacityMax;
+		opacityMax = o;
+	}
+	fw.RandomizeOpacity_input = opacityOffset == 0 ? [opacityMin, opacityMax].join("-") : opacityOffset;
+	
+	// Apply random opacity to elements
+	var range = opacityMax - opacityMin
+	var s = sel.length;
+	while(s--){
+		var elem = sel[s];
+		fw.selection = [elem];
+		var opacity = elem.opacity;
+		if(opacityOffset)
+			opacity += -opacityOffset + opacityOffset * 2 * Math.random();
+		if(range)
+			opacity = opacityMin + range * Math.random();
+		dom.setOpacity(Math.round(opacity));
+	}
+	
+	// Restore selection
+	fw.selection = sel;
+	
+	// Command success
+	return true;
+}
+
+try{
+RandomizeOpacity();
+}catch(e){alert([e.lineNumber, ":", e, e.fileName])};

@@ -1,0 +1,67 @@
+// Fireworks JavaScript Command
+// Scales the document to fit inside a specified area, maintaining aspect ratio
+// To use with batch process you can comment out "acquire user input" and "user input result" below, it will then use the WIDTH, HEIGHT params defined at the top
+// Install by copying to Fireworks/Configuration/Commands/
+// Aaron Beall 2009
+// Version 1.0
+
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+// params
+var WIDTH = 250;
+var HEIGHT = 250;
+
+// scale to fit image in area with no border
+function ScaleToFitArea(){
+	// require active document
+	if (!dom) return false;
+	
+	// acquire user input
+	var input;
+	do{
+		input = prompt("Width, Height:",input||fw.ScaleToFitArea_input||[WIDTH,HEIGHT]);
+		if(input==null) return false;
+	}while(!validate());
+	
+	// user input result
+	fw.ScaleToFitArea_input = input;
+	WIDTH = Math.round(Number(input[0]));
+	HEIGHT = Math.round(Number(input[1]));
+	
+	// validate user input
+	function validate(){
+		input = String(input).split(',');
+		if(input.length != 2 && input.length != 1)
+			return alert('Invalid input!');
+		if(input.length == 1)
+			input[1] = input[0];
+		if(isNaN(Number(input[0])) || isNaN(Number(input[1])))
+			return alert('Invalid input! Enter numeric values only.');
+		if(Number(input[0]) < 0 || Number(input[1]) < 0)
+			return alert('Invalid input! Enter positive values only.');
+		return true;
+	}
+	
+	// resize
+	var currWidth = dom.width, currHeight = dom.height;
+	var targetWidth, targetHeight, ratio;
+	
+	// maintain aspect ratio
+	ratio = HEIGHT/currHeight;
+	if(currWidth*ratio <= WIDTH){
+		targetWidth = Math.round(currWidth*ratio);
+		targetHeight = Math.round(currHeight*ratio);
+	}else{
+		ratio = WIDTH/currWidth;
+		targetWidth = Math.round(currWidth*ratio);
+		targetHeight = Math.round(currHeight*ratio);
+	}
+	
+	// resize image
+	dom.setDocumentImageSize({left:0, top:0, right:targetWidth, bottom:targetHeight}, {pixelsPerUnit:dom.resolution, units:dom.resolutionUnits}, false);
+}
+
+try{
+ScaleToFitArea();
+}catch(e){alert(['error',e.lineNumber])}

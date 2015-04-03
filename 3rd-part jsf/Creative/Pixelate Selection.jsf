@@ -1,0 +1,75 @@
+/*
+----------------------------------------
+	Pixelate Selection v0.2.1
+----------------------------------------
+	Created by Matt Stow 2011
+	http://www.mattstow.com
+	
+	Idea by Dave Hogue
+----------------------------------------
+	Version History:
+	0.2.1 - Added warning for no selection. Removed rounding as FW occasionally choked
+	0.2.0 - Changed & simplified pixelation method to 'cell size' to be similar to PS's Mosaic filter
+	0.1.0 - Initial release
+----------------------------------------
+*/
+
+(function()
+{
+	if (fw.documents.length == 0) {
+		return;
+	}
+	
+	if (fw.selection != null && fw.selection.length > 0) {
+		
+		var pixelate = prompt('Pixel cell size (approximate)', '10');
+
+		if (pixelate == null || parseInt(pixelate) == 0 || isNaN(parseInt(pixelate)))
+			return;
+			
+		var dom = fw.getDocumentDOM();
+		
+		if (dom.isPaintMode) {
+			dom.clipCopy();
+			dom.clipPaste('do not resample', null);
+			dom.exitPaintMode();
+		}
+		else {
+			dom.cloneSelection();
+			dom.flattenSelection();
+		}
+		
+		var originalWidth = fw.selection[0].width;
+		var originalHeight = fw.selection[0].height;
+		var originalLeft = fw.selection[0].left;
+		var originalTop = fw.selection[0].top;
+		
+		var largest = originalWidth > originalHeight ? originalWidth : originalHeight;
+		var EditTransformMode = fw.getPref('EditTransformMode');
+		
+		if (EditTransformMode != 1)
+			fw.setPref('EditTransformMode', '1');
+		
+		pixelate = parseInt(pixelate);
+		pixelate = largest/pixelate;
+		pixelate = pixelate/largest;
+		
+		dom.scaleSelection(pixelate, pixelate, "autoTrimImages transformAttributes");	
+		fw.selection[0].name = 'Pixelate';
+		fw.setPref('EditTransformMode', '4');
+		
+		var newWidth = fw.selection[0].width;
+		var newHeight = fw.selection[0].height;
+		newWidth = (originalWidth/newWidth);
+		newHeight = (originalHeight/newHeight);
+		dom.scaleSelection(newWidth, newHeight, "autoTrimImages transformAttributes");
+			
+		fw.selection[0]['left'] = originalLeft;
+		fw.selection[0]['top'] = originalTop;
+			
+		fw.setPref('EditTransformMode', EditTransformMode);
+	}
+	else {
+		alert('Please make a selection before running this command');
+	}
+})();

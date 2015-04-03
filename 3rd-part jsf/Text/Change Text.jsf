@@ -1,0 +1,13 @@
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+var t = prompt("Enter text:","");
+if(t){
+	for(var i in sel){
+		if(sel[i]=="[object Text]"){
+			sel[i].textChars = t;
+			dom.changeCurrentPage(dom.currentPageNum);
+		}
+	}
+}
+fw.selection = sel;

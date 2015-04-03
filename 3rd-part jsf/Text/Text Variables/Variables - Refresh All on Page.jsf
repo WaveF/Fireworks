@@ -1,0 +1,22 @@
+/* ===========================================================================
+	
+	Variables - Refresh All on Page.jsf
+
+	Copyright 2012 John Dunning.  All rights reserved.
+	fw@johndunning.com
+	http://johndunning.com/fireworks
+
+   ======================================================================== */
+
+
+// ===========================================================================
+if (typeof require != "function" || !require.version) {
+	fw.runScript(fw.currentScriptDir + "/lib/fwrequire.js"); }
+
+require([
+	"textvars"
+], function(
+	textvars) 
+{
+	textvars.refreshAllOnPage();
+})

@@ -1,0 +1,74 @@
+/*
+Fireworks CS5 JavaScript Command
+Randomizes the feather/blur of selected elements
+Install by copying to Fireworks/Configuration/Commands/
+Aaron Beall 2011 - http://abeall.com
+Version 1.1
+*/
+
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+function RandomizeFeather() {
+	
+	// Require active document
+	if(!fw.documents.length)
+		return false;
+	
+	// Require selection
+	if(!sel.length)
+		return alert("Unable to randomize; please select some objects.");
+	
+	// User input
+	var feather;
+	do{
+		feather = prompt("Enter amount of blur randomization (0-30):", fw.RandomizeFeather_input || "15");
+		if(!feather)
+			return;
+	}while(!validate());
+	function validate(){
+		feather = Number(feather);
+		if(isNaN(feather))
+			return alert("Invalid input; enter numbers only.");
+		return true;
+	}
+	
+	// Analyze input
+	fw.RandomizeFeather_input = feather;
+	
+	// Apply random feather/blur to elements
+	var BLUR_MOA_ID = "{d04ef8c0-71b3-11d1-8c8200a024cdc039}";
+	var s = sel.length;
+	while(s--){
+		var elem = sel[s];
+		fw.selection = [elem];
+		if(elem.pathAttributes && elem.pathAttributes.fill){
+			var fill = copyObject(elem.pathAttributes.fill);
+			fill.feather = feather * Math.random();
+			dom.setFill(fill);
+		}else{
+			var effects = elem.effectList ? copyObject(elem.effectList.effects) : [];
+			var effect = effects[effects.length - 1];
+			if(!effect || effect.EffectMoaID != BLUR_MOA_ID){
+				effect = { EffectIsVisible:true, EffectMoaID:BLUR_MOA_ID, MB_filter_preview_tile_size:"-1 -1", category:"Blur", gaussian_blur_radius:0, name:"Gaussian Blur..." };
+				effects.push(effect);
+			}
+			effect.gaussian_blur_radius = (Number(effect.gaussian_blur_radius) + feather * Math.random()).toFixed(2);
+			dom.applyEffects({ category:"UNUSED", effects:effects, name:"UNUSED" });
+		}
+	}
+	
+	// Restore selection
+	fw.selection = sel;
+	
+	// Command success
+	return true;
+}
+
+try{
+RandomizeFeather();
+}catch(e){alert([e.lineNumber, ":", e, e.fileName])};
+
+function copyObject(obj){
+	return eval("(" + obj.toSource() + ")");
+}

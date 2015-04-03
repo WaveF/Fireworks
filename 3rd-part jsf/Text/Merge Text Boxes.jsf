@@ -1,0 +1,73 @@
+// Fireworks JavaScript Command
+// Copy to Fireworks/Configuration/Commands/
+// Aaron Beall - http://abeall.com
+// Version 1.0
+
+var dom = fw.getDocumentDOM(); // document object
+var sel = new Array().concat(fw.selection); // saved selection
+
+function MergeTextFields() {
+	
+	if (!sel.length) return false;
+	
+	var origTextFields = [];
+	for (s in sel) {
+		if (sel[s] == '[object Text]' ) {
+			origTextFields.push(sel[s]);
+		}
+	}
+	if (origTextFields.length < 2) return false;
+	
+	// user input
+	var space = true;//fw.yesNoDialog('Add linebreaks between merged text?');
+	var input = prompt("Add between merged text:\n(Use \"\\r\" for a line break) ",fw.MergeTextFields_prompt||"");
+	if(input == null) input = "";
+	fw.MergeTextFields_prompt = input;
+	SPACE_CHAR = input.split('\\n').join('\r').split('\\r').join('\r');//'\r';
+	
+	// depth sort text fields by how high they are, so that merging merges in expected order
+	origTextFields.sort(topsort);
+	function topsort(a,b){
+		if(a.top>b.top)return 1;
+		if(a.top==b.top)return 0;
+		return -1;
+	}
+	
+	// create new text field to put all merged content into
+	var topText = origTextFields[0];
+	fw.selection = topText;
+	dom.cloneSelection();
+	var highestPoint = 9999999;
+	for(var i in origTextFields){
+		if(origTextFields[i].top < highestPoint) highestPoint = origTextFields[i].top;
+	}
+	dom.moveSelectionTo({x:topText.left,y:highestPoint}, false, false);
+	var newText = fw.selection[0];
+	
+	// make merged textRuns object
+	var mergedText = {initialAttrs:topText.textRuns.initialAttrs, textRuns:[]};
+	for(var i=0 ; i<origTextFields.length ; i++){
+		var newRuns = origTextFields[i].textRuns.textRuns;
+		newRuns[0].changedAttrs = mergeAttrs(origTextFields[i].textRuns.initialAttrs,origTextFields[i].textRuns.textRuns[0].changedAttrs);
+		if(space && i>0)
+			newRuns[0].characters = SPACE_CHAR + newRuns[0].characters;
+		mergedText.textRuns = mergedText.textRuns.concat(newRuns);
+	}
+	newText.textRuns = mergedText;
+	
+	// delete old text boxes, assign new text box to selection
+	fw.selection = origTextFields;
+	dom.deleteSelection(false);
+	fw.selection = newText;
+	
+	return true;
+}
+
+MergeTextFields();
+
+function mergeAttrs(attrs1, attrs2){
+	for(var i in attrs2){
+		attrs1[i] = attrs2[i];
+	}
+	return attrs1;
+}

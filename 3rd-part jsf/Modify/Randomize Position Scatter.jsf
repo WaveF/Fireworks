@@ -1,0 +1,70 @@
+/*
+Fireworks CS5 JavaScript Command
+Randomizes the position of selected elements by random scattering
+Install by copying to Fireworks/Configuration/Commands/
+Aaron Beall 2011 - http://abeall.com
+Version 1.0
+*/
+
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+function RandomizeScatter() {
+	
+	// Require active document
+	if(!fw.documents.length)
+		return false;
+	
+	// Require selection
+	if(!sel.length)
+		return alert("Unable to randomize; please select some objects.");
+	
+	// User input
+	var input, xmove, ymove, useVector;
+	do{
+		input = prompt("Enter amount of x,y position randomization, in pixels (a single value will use a random angle as a directional vector): ", fw.RandomizeScatter_input || "0,0");
+		if(!input)
+			return;
+	}while(!validate());
+	function validate(){
+		var args = String(input).split(",");
+		xmove = Number(args[0]);
+		ymove = Number(args[1]);
+		useVector = args.length == 1;
+		if(isNaN(xmove) || (!useVector && isNaN(ymove)))
+			return alert("Invalid input; enter numbers only.");
+		return true;
+	}
+	
+	// Analyze input
+	fw.RandomizeScatter_input = useVector ? xmove : [xmove, ymove].join(",");
+	
+	// Peform randomized scattering to elements
+	for(var s = 0; s < sel.length; s++){
+		var elem = sel[s];
+		fw.selection = [elem];
+		var xrand, yrand;
+		if(useVector){
+			var distance = Math.random() * xmove;
+			var angle = -Math.PI + Math.PI * 2 * Math.random();
+			xrand = Math.round(distance * Math.cos(angle)),
+			yrand = Math.round(distance * Math.sin(angle))
+		}else{
+			xrand = Math.round(-xmove * .5 + Math.random() * xmove);
+			yrand = Math.round(-ymove * .5 + Math.random() * ymove);
+		}
+		if(xrand !=0 || yrand != 0)
+			dom.moveSelectionBy({x:xrand, y:yrand}, false, false);
+		sel[s] = fw.selection[0];
+	}
+	
+	// Restore selection
+	fw.selection = sel;
+	
+	// Command success
+	return true;
+}
+
+try{
+RandomizeScatter();
+}catch(e){alert([e.lineNumber, ":", e, e.fileName])};

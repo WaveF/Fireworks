@@ -1,0 +1,329 @@
+// Fireworks JavaScript Command
+// Scatters selected objects over the surface of the top most selected object
+// Install by copying to Fireworks/Configuration/Commands/
+// Run in Fireworks via the Commands menu
+// Aaron Beall 2008-2011 - http://abeall.com
+// Version 1.5
+
+/* BUGS
+- [FIXED] when containment is set to 'contained' there is still some overflow, especially if elements are scaled up. i don't know why, because scaling comes before the isInside test. solution: re-assign elem variable after scaling
+- [FIXED] containment 'overflow' is heavily bottom right biased, because x,y corresponds to element top left. solution: make x,y correspond to element center
+- [FIXED-v1.2] failing under condition: contained, 1px stroke, no fill [solution: pathPunch doesn't work well with 1px strokes converted to paths)
+- [FIXED-v1.3] failing under condition: contained, stroke, no fill, do not choose "fill anyway" [solution: path must be included in invertedContainer]
+- [FIXED-v1.4] breaks when using autoshape as container -- should treat autoshape as path
+
+TODO
+- [DONE-v1.1] a more efficient and accurate containment 'contained' test would be one in which the element bounding is tested against an inverted container
+- [DONE-v1.5] put scattered elements actually over top of container element
+- in order to enhance efficiency for container objects which have a lot of dead space(ex. stroke only containers), the container bounding could be subdivided into smaller areas(ex. 10x10 grid) and each bounding grid cell could be tested before hand to determine if it is eligable at all. This would reduce the accuracy somewhat, however, and in some cases may not pay off.
+*/
+
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+function Scatter(){
+	// require active document
+	if (!dom) return false;
+	
+	// validate selection
+	if(sel.length < 2)
+		return alert("This command requires at least two selected objects. All bottom objects will be cloned and distributed inside the top most object.");
+	
+	// user input
+	var input, params = {};
+	do{
+		input = prompt("Scatter:\nNumber of clones, Rotation(0-180), Scale(0-100), Opacity(0-100), Distribution(inside, outside), Containment(overflow, contained)", fw.Scatter_input || "25,180,0,0,inside,overflow");
+	}while(!validate());
+	function validate(){
+		if(input==null)
+			return true;
+		input = input.split(' ').join('').split(',');
+		if(input.length != 6)
+			return alert('Invalid input!');
+		params.clones = Math.round(Number(input[0]));
+		if(isNaN(params.clones))
+			return alert('Invalid input! Number of clones must be a number.');
+		if(params.clones<1)
+			return alert('Invalid input! Number of clones must be greater 1 or more.');
+		params.rotation = Math.max(-180,Math.min(Number(input[1]),180));
+		if(isNaN(params.rotation))
+			return alert('Invalid input! Rotation jitter must be a number.');
+		params.scale = Math.max(-100,Math.min(Number(input[2]),100));
+		if(isNaN(params.scale))
+			return alert('Invalid input! Scale jitter must be a number.');
+		params.opacity = Math.max(-100,Math.min(100,Number(input[3])));
+		if(isNaN(params.opacity))
+			return alert('Invalid input! Opacity jitter must be a number.');
+		params.distribution = input[4].toLowerCase();
+		if(params.distribution != 'inside' && params.distribution != 'outside')
+			return alert('Invalid input! Distribution must be "inside" or "outside."');
+		params.containment = input[5].toLowerCase();
+		if(params.containment != 'overflow' && params.containment != 'contained')
+			return alert('Invalid input! Containment must be "overflow" or "contained."');
+		
+		return true;
+	}
+	if(input == null)
+		return false;
+	fw.Scatter_input = input.join(',');
+	var distributeInside = params.distribution == 'inside';
+	
+	// set container
+	var container = sel[0];
+	fw.selection = [container];
+	
+	// clone and ungroup smartshape into path
+	if(container.isSmartShape){
+		dom.cloneSelection();
+		dom.ungroup();
+		if(fw.selection.length > 1)
+			dom.pathUnion();
+		container = fw.selection[0];
+		var isTempContainer = true;
+	
+	
+		
+	
+	// convert container element to path if it is not already a path
+	}else if(container != '[object Path]'){
+		
+		// clone and flatten if it is not already a bitmap, or it has filters (which might change appearance)
+		if(container != '[object Image]' || (container.effectList && container.effectList.effects && container.effectList.effects.length)){
+			dom.cloneSelection();
+			dom.flattenSelection();
+			var tempBitmap = "__SCATTER_TEMP_BITMAP__" + (new Date()).getTime();
+			fw.selection[0].name = tempBitmap;
+		}
+		
+		// select pixels from bitmap and convert to path
+		dom.enterPaintMode();
+		dom.selectAll();
+		dom.moveSelectionBy({x:0, y:0}, false, true); // forces Select All to become only opaque pixels
+		dom.convertMarqueeToPath();
+		dom.setFill(new Fill());
+		dom.setBrush(null);
+		container = fw.selection[0];
+		var isTempContainer = true;
+		
+		// delete flattened clone if it was created
+		if(tempBitmap){
+			var temp = dom.findNamedElements(tempBitmap);
+			if(temp.length){
+				fw.selection = [temp[0]];
+				dom.deleteSelection(false);
+			}
+		}
+	}
+	
+	// prepare container element
+	fw.selection = [container];
+	var oldName = container.name, containerName = "__SCATTER_CONTAINER__" + (new Date()).getTime();
+	container.name = containerName;
+	if(!container.pathAttributes.fill && container.contours[0].isClosed && fw.yesNoDialog('Container object has no fill. Should the distributed objects fill the container anyway?')){
+		var hadNoFill = true;
+		dom.setFill(new Fill());
+	}
+	var oldOpacity = container.opacity;
+	container.opacity = 0;
+	
+	// create inverted container if containment is set to 'contained'
+	// this will be used to check against an element falling outside the container at all
+	if(params.containment == 'contained'){
+		
+		// create duplicate inverted container to represent areas an element cannot overlap
+		dom.cloneSelection();
+		var invertedContainer = fw.selection[0];
+		var invertedContainerName = "__SCATTER_INVERTED_CONTAINER__" + (new Date()).getTime();
+		invertedContainer.name = invertedContainerName;
+		
+		// invert the container by adding a contour around canvas
+		var c = invertedContainer.contours.length;
+		invertedContainer.contours[c] = new Contour();
+		invertedContainer.contours[c].isClosed = true;
+		var n = invertedContainer.contours[c].nodes;
+		n.length = 4;
+		setNodePosition(n[0], {x:dom.left, y:dom.top});
+		setNodePosition(n[1], {x:dom.left + dom.width, y:dom.top});
+		setNodePosition(n[2], {x:dom.left + dom.width, y:dom.top + dom.height});
+		setNodePosition(n[3], {x:dom.left, y:dom.top + dom.height});
+		
+		// if container has no fill, it needs to be part of invertedContainer to represent out of bounds space
+		if(!container.pathAttributes.fill){
+			fw.selection = [container];
+			dom.cloneSelection();
+			fw.selection = [fw.selection[0], invertedContainer];
+			dom.pathUnion();
+			invertedContainer = fw.selection[0];
+			invertedContainer.name = invertedContainerName;
+		}
+		
+		// if container has stroke, it needs to count that as "good space" so it must be cut away from the inverted container, which represents "bad space"
+		if(invertedContainer.pathAttributes.brush && invertedContainer.pathAttributes.brush.diameter >= 2){
+			fw.selection = [container];
+			dom.cloneSelection();
+			dom.setFill(null);
+			dom.setOpacity(100);
+			dom.flattenSelection();
+			var tempInvertedBitmap = "__SCATTER_TEMP_INVERTED_BITMAP__" + (new Date()).getTime();
+			fw.selection[0].name = tempInvertedBitmap;
+			dom.enterPaintMode();
+			dom.selectAll();
+			dom.moveSelectionBy({x:0, y:0}, false, true); // forces Select All to become only opaque pixels
+			dom.convertMarqueeToPath();
+			var tempPunchPath = fw.selection[0];
+			fw.selection = dom.findNamedElements(tempInvertedBitmap);
+			dom.deleteSelection(false);
+			fw.selection = [invertedContainer, tempPunchPath];
+			dom.pathPunch();
+			invertedContainer = fw.selection[0];
+			invertedContainer.name = invertedContainerName;
+			dom.setFill(new Fill());
+			dom.setBrush(null);
+		}
+		
+		// set inverted container to be filled with no stroke
+		dom.setFill(new Fill());
+		dom.setBrush(null);
+		
+		fw.selection = [container];
+	}
+	
+	// scatter
+	var bounds = distributeInside ? dom.getSelectionBounds() : {top:dom.top, left:dom.left, bottom:dom.top + dom.height, right:dom.left + dom.width};
+	var elemIndex = 0, elem, newElems = [], hasFillHandles = [], hasRandomized = [], x, y;
+	var i = params.clones, t, MAX_ATTEMPTS = 1000;
+	while(i--){
+		
+		// cycle through selection to clone and scatter
+		if(++elemIndex > sel.length-1)
+			elemIndex = 1;
+		fw.selection = [sel[elemIndex]];
+		dom.cloneSelection();
+		elem = fw.selection[0];
+		t = 0;
+		
+		// attempt to find a random point inside container
+		while(true){
+			
+			// prevent endless loop by only allowing a certain number of attempts to find random point
+			if(++t > MAX_ATTEMPTS){
+				alert('Operation ended prematurely due to lack of available distribution area. \n\nPlease check that your distribution object(s) can fit inside your top most container object.');
+				dom.deleteSelection(false);
+				break;
+			}
+			
+			// randomize rotation, scale, and opacity
+			if(!hasRandomized[i]){
+				if(params.rotation != 0)
+					dom.rotateSelection(rand(params.rotation), "autoTrimImages transformAttributes");
+				if(params.scale != 0){
+					var s = Math.max(0, 1 + rand(params.scale) / 100);
+					dom.scaleSelection(s, s, "autoTrimImages transformAttributes");
+				}
+				if(params.opacity != 0)
+					dom.setOpacity(Math.max(0, Math.min(100, elem.opacity + rand(params.opacity))),"autoTrimImages transformAttributes");
+				hasRandomized[i] = true;
+				elem = fw.selection[0];
+			}
+			
+			// in the case of fill handles we need to copy/pasteAttributes to maintain fill handle location
+			if(hasFillHandles[elemIndex] == undefined)
+				hasFillHandles[elemIndex] = elem.pathAttributes && elem.pathAttributes.fill && elem.pathAttributes.fill.gradient;
+				
+			// find random point
+			x = Math.round(bounds.left + Math.random() * (bounds.right - bounds.left) - elem.width / 2);
+			y = Math.round(bounds.top + Math.random() * (bounds.bottom - bounds.top) - elem.height / 2);
+			
+			// determine if element is inside/outside container
+			if(isInside(x, y, elem) == distributeInside){
+				
+				// move and paste fill handles in necessary
+				if(hasFillHandles[elemIndex])
+					dom.clipCopy();
+				dom.moveSelectionTo({x:x, y:y}, false, false);
+				if(hasFillHandles[elemIndex])
+					dom.clipPasteAttributes();
+				break;
+			}
+		}
+		if(t > MAX_ATTEMPTS)
+			break;
+		newElems.push(fw.selection[0]);
+	}
+	
+	// function to determine if element is inside container
+	function isInside(x, y, elem){
+		var elems = dom.elementsAt({left:x, top:y, right:x + elem.width, bottom:y + elem.height});
+		if(params.containment == 'overflow')
+			return containsElem(elems, containerName);
+		else
+			return !containsElem(elems, invertedContainerName);
+			
+		function containsElem(elems, name){
+			for(var e in elems)
+				if(elems[e].name == name)
+					return true;
+			return false;
+		}
+	}
+	
+	// clean up container
+	if(isTempContainer){
+		//delete temp container
+		fw.selection = [container];
+		dom.deleteSelection(false);
+	}else{
+		// restore container to original state
+		container.name = oldName;
+		if(hadNoFill)
+			container.pathAttributes.fill = null;
+		container.opacity = oldOpacity;
+	}
+	if(invertedContainer){
+		fw.selection = [invertedContainer];
+		dom.deleteSelection(false);
+	}
+	
+	// group final objects
+	if(newElems.length){
+		fw.selection = newElems;
+		dom.group('normal');
+		fw.selection[0].name = "Scatter: " + fw.selection[0].elements.length + " objects";
+		
+		// place scattered elements above container
+		var elemIndex = findElemIndex(container);
+		if(elemIndex)
+			dom.moveSelectionToLayer(elemIndex.layer, false, "none", elemIndex.elem)
+		else
+			dom.arrange("front");
+	}
+}
+
+//try{
+Scatter();
+//}catch(e){ alert([e, e.lineNumber, e.fileName].join("\n")) };
+
+// random +- range
+function rand(val){
+	return -val + Math.random() * (val * 2);
+}
+
+// set node position
+function setNodePosition(n, pt){
+	setBezierNodePosition(n, pt, pt, pt);
+}
+function setBezierNodePosition(n, ptp, pt, pts){
+	n.predX	= ptp.x;	n.predY	= ptp.y;
+	n.x		= pt.x;		n.y		= pt.y;
+	n.succX	= pts.x;	n.succY	= pts.y;
+}
+function findElemIndex(elem){
+	for(var l in dom.layers){
+		var elems = dom.layers[l].frames[dom.currentFrameNum].elements;
+		for(var e = 0; e < elems.length; e++){
+			if(elems[e].customData == elem.customData)
+				return {layer:l, elem:e};
+		}
+	}
+	return null;
+}

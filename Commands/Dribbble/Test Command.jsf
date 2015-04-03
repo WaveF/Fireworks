@@ -1,0 +1,182 @@
+if (typeof require != "function" || !require.version) {fw.runScript(fw.currentScriptDir + "/lib/fwrequire.js"); } require(["fwlib/dialog"], function(dialog){
+
+	var jsml = {
+		showTitle: false,
+		confirmButton: "OKBtn",
+		dismissButton: "CancelBtn",
+		size: "225x200",
+		css: {
+			".Row": {
+				paddingLeft: 2,
+				paddingRight: 2,
+				paddingTop: 0,
+				horizontalGap: 0,
+				horizontalAlign: "left",
+				verticalAlign: "middle"
+			}
+		},
+		children: [
+			{ HBox: {
+				percentWidth: 100,
+				style: {
+					horizontalAlign: "center",
+				},
+				children: [
+					{ ComboBox: {
+						percentWidth: 100,
+						name: "OpMenu",
+						dataProvider: [
+							{ label: "Scale",	data: "_scale" },
+							{ label: "Resize",	data: "_resize" },
+							{ label: "Rotate",	data: "_rotate" }
+						],
+						events: {
+							change: function(event){
+								setBoxVisible(event);
+							}
+						},
+					} }
+				],
+			} },
+			//------------------------------------------------------------------------------------- Scale
+			{ HBox: {
+				name: "ScaleBox",
+				percentWidth: 100,
+				height: 100,
+				style: {
+					paddingTop: 12,
+					paddingLeft: 5,
+					paddingRight: 5,
+					paddingBottom: 5,
+					backgroundColor: "0xfcfcfc",
+				},
+				children: [
+					/*{ Hbox: {
+						percentWidth: 100,
+						height: 50,
+						style: {
+							backgroundColor: "0xff00ff",
+						},
+						children: [
+							{ Label: {
+								text: "213123123",
+							} },
+						]
+					} },*/
+					
+					
+					
+					createHeader("Parameters"),
+					createHeader("Parameters"),
+					{ Spacer: { height: 0 } },
+					/*row ([
+						{ Label: {
+							percentWidth: 50,
+							text: "Horizontal:",
+						} },
+						{ TextInput: {
+							percentWidth: 50,
+							text: "aaa",
+						} },
+					]),
+					row ([
+						{ Label: {
+							percentWidth: 50,
+							text: "Vertival:",
+						} },
+						{ TextInput: {
+							percentWidth: 50,
+							text: "bbb",
+						} },
+					]),*/
+				],
+			} },
+			//------------------------------------------------------------------------------------- Resize
+			{ HBox: {
+				name: "ResizeBox",
+				height: 0,
+				percentWidth: 100,
+				style: {
+					horizontalAlign: "center",
+					paddingTop: 6,
+				},
+				children: [
+					{ Label: {
+						text: "ResizeBox",
+					} }
+				],
+			} },
+			//------------------------------------------------------------------------------------- Rotate
+			{ HBox: {
+				name: "RotateBox",
+				height: 0,
+				percentWidth: 100,
+				style: {
+					horizontalAlign: "center",
+					paddingTop: 0,
+				},
+				children: [
+					{ Label: {
+						text: "RotateBox",
+					} }
+				],
+			} },
+			//-------
+		]
+	}
+	
+	var result = dialog.open(jsml);
+	
+	if(result){
+		alert(result.OpMenu.selectedItem.label);
+	}
+});
+
+
+function createHeader(inLabel){
+	return { HBox: {
+		percentWidth: 100,
+		style: {
+			paddingLeft: 4,
+			backgroundAlpha: .2,
+			backgroundColor: "0xbbbbbb"
+		},
+		children: [
+			{ Label: {
+				text: inLabel,
+				style: { fontWeight: "bold", color: "0x444444" }
+			} }
+		]
+	} };
+}
+
+
+function row(inChildren){
+	return { HBox: {
+		percentWidth: 100,
+		//styleName: "Row",
+		children: inChildren
+	} };
+}
+
+
+function setBoxVisible(inEvent){
+	switch(inEvent.currentValues.OpMenu.selectedItem.label){
+		case "Scale":
+			inEvent.result.push(["ScaleBox","height",100]);
+			inEvent.result.push(["ResizeBox","height",0]);
+			inEvent.result.push(["RotateBox","height",0]);
+			break;
+		case "Resize":
+			inEvent.result.push(["ScaleBox","height",0]);
+			inEvent.result.push(["ResizeBox","height",100]);
+			inEvent.result.push(["RotateBox","height",0]);
+			break;
+		case "Rotate":
+			inEvent.result.push(["ScaleBox","height",0]);
+			inEvent.result.push(["ResizeBox","height",0]);
+			inEvent.result.push(["RotateBox","height",100]);
+			break;
+	}
+}
+//fw.getDocumentDOM().scaleSelection(0.48076921701431274, 0.47191011905670166, "autoTrimImages transformAttributes");

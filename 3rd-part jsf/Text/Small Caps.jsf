@@ -1,0 +1,107 @@
+// Fireworks JavaScript Command
+// Copy to Fireworks/Configuration/Commands/
+// 2007 Aaron Beall - http://fireworks.abeall.com
+// Version 1.0
+// Requires CS3+
+
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+function SmallCaps(){
+	if(!dom) return;
+	
+	var texts = [];
+	for(var s in sel){
+		if(sel[s] == "[object Text]")
+			texts.push(sel[s]);
+	}
+	
+	if(!texts.length)
+		return alert("Please select at least one text box.");
+	var isValid = false;
+	for(t in texts){
+		if(!isUpperCase(texts[t].textChars)){
+			isValid = true;
+			break;
+		}
+	}
+	if(!isValid)
+		return alert("The text selection is not valid. This command will convert lower case letters to small capital letters.");
+	
+	var input = prompt("Size percentage of small capital letter compared to large capital letter (typical is 75 percent):",(fw.SmallCaps_input||"75"));
+	if(isNaN(Number(input)) || Number(input)<1)
+		input = "75";
+	fw.SmallCaps_input = input;
+	SMALL_CAPS_PERCENT = Number(input)/100;
+	
+	for(var t in texts){
+		var runs = texts[t].textRuns, run;
+		var newRuns = {initialAttrs:runs.initialAttrs, textRuns:[]}, newRun;
+		var isCap = false, cha, textSize = Number(runs.initialAttrs.size.split('pt')[0]);
+		for(var r=0; r<runs.textRuns.length; r++){
+			run = runs.textRuns[r];
+			if(run.changedAttrs.size)
+				textSize = Number(run.changedAttrs.size.split('pt')[0]);
+			//run.changedAttrs.size = textSize+"pt";
+			newRuns.textRuns.push({characters:run.characters,changedAttrs:run.changedAttrs});
+			if(!isUpperCase(run.characters[0]))
+				newRuns.textRuns[newRuns.textRuns.length-1].changedAttrs.size = (textSize*SMALL_CAPS_PERCENT)+"pt";
+			var lastC = 0;
+			for(var c=0; c<run.characters.length; c++){
+				cha = run.characters.charAt(c);
+				if(isUpperCase(cha)){
+					if(!isCap){
+						//alert(c+':'+cha+' [UPPERCASE] '+run.characters.substr(c+1));
+						newRun = newRuns.textRuns[newRuns.textRuns.length-1];
+						newRun.characters = newRun.characters.substring(0,c-lastC);
+						newRuns.textRuns.push({characters:run.characters.substr(c),changedAttrs:{size:textSize+"pt"}});
+						if(c==0){
+							for(var a in run.changedAttrs){
+								if(run.changedAttrs[a] != 'size')
+									newRuns.textRuns[newRuns.textRuns.length-1].changedAttrs[a] = run.changedAttrs[a];
+							}
+						}
+						lastC = c;
+					}
+					isCap = true;
+				}else{
+					if(isCap){
+						//alert(c+':'+cha+' [lowercase] '+run.characters.substr(c+1));
+						newRun = newRuns.textRuns[newRuns.textRuns.length-1];
+						newRun.characters = newRun.characters.substring(0,c-lastC);
+						newRuns.textRuns.push({characters:run.characters.substr(c),changedAttrs:{size:(textSize*SMALL_CAPS_PERCENT)+"pt"}});
+						if(c==0){
+							for(var a in run.changedAttrs){
+								if(run.changedAttrs[a] != 'size')
+									newRuns.textRuns[newRuns.textRuns.length-1].changedAttrs[a] = run.changedAttrs[a];
+							}
+						}
+						lastC = c;
+					}
+					isCap = false;
+				}
+			}
+		}
+		texts[t].textRuns = newRuns;
+		setTextChars(texts[t],texts[t].textChars.toUpperCase());
+	}
+	
+	// test if string is alpha uppercase (ie numbers and puncuation are not uppercase)
+	function isUpperCase(str){
+		return str == str.toUpperCase()// && str != str.toLowerCase();
+	}
+	
+	// replace the characters in a text box while preserving textRuns
+	function setTextChars(text,txt){
+		//text.textChars = txt; // almost so easy! but it breaks undo
+		//dom.changeCurrentPage(dom.currentPageNum); // hack to force refresh the screen, because changing textChars doesn't refresh the screen
+		var runs = text.textRuns, run, charCount = 0;
+		for(var i=0; i<runs.textRuns.length; i++){
+			run = runs.textRuns[i];
+			run.characters = txt.substr(charCount,run.characters.length);
+			charCount += run.characters.length;
+		}
+		text.textRuns = runs;
+	}
+}
+SmallCaps();

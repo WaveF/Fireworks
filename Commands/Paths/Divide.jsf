@@ -1,0 +1,64 @@
+var SUBSELECTION_TOOL = 'Subselection';
+/*
+Fireworks CS5 JavaScript Command
+Cuts multiple overlapping paths into individual pieces, like Divide Paths in other vector apps
+Install by copying to Fireworks/Configuration/Commands/
+Aaron Beall 2011 - http://abeall.com
+Version 2.0
+
+BUGS:
+- If one path is entirely contained by another path (such as a donut), resulting paths are
+  unexpectedly split apart because we use split paths to reverse the effects of joining. 
+  Such results can be manually fixed easily and this method is way more reliable than v1, 
+  so we live with it.
+*/
+
+var dom = fw.getDocumentDOM(); // document object
+var sel = new Array().concat(fw.selection); // saved selection
+
+function DividePaths(){
+	
+	if (!sel.length) return false;
+	
+	// validate selection
+	var paths = [];
+	for(var i in sel)
+		if(sel[i] == "[object Path]")
+			paths.push(sel[i]);
+	
+	if(paths.length < 2)
+		return false;
+	
+	// create a union copy as the base shape
+	fw.selection = paths;
+	dom.cloneSelection();
+	dom.pathUnion();
+	dom.arrange("back");
+	var union1 = fw.selection[0];
+	dom.cloneSelection();
+	var union2 = fw.selection[0];
+	
+	// join paths and punch
+	fw.selection = paths;
+	dom.cloneSelection();
+	dom.joinPaths();
+	fw.selection = [union1, fw.selection[0]];
+	dom.pathPunch();
+	dom.splitPaths();
+	
+	// join paths and crop
+	fw.selection = paths;
+	dom.cloneSelection();
+	dom.joinPaths();
+	fw.selection = [union2, fw.selection[0]];
+	dom.pathCrop();
+	dom.splitPaths();
+	
+	// delete old paths
+	fw.selection = paths;
+	dom.deleteSelection(false);
+}
+
+//try{
+DividePaths();
+//}catch(e){alert([e, e.lineNumber])}

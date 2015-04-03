@@ -1,0 +1,65 @@
+/* ===========================================================================
+	
+	Paste into Group.jsf
+
+	Copyright 2012 John Dunning.  All rights reserved.
+	fw@johndunning.com
+	http://johndunning.com/fireworks
+
+   ======================================================================== */
+
+
+/*
+	pasting as clip mask may mess up effects 
+*/
+
+
+// ===========================================================================
+try { (function() {
+	if (fw.documents.length < 1) {
+			// no documents are open
+		return;
+	}
+
+	if (fw.selection.length < 1 || !fw.selection[0].elements) {
+			// there's nothing selected or it's not a group
+		return;
+	}
+
+	var dom	= fw.getDocumentDOM();
+	
+		// save a reference to one of the group's children before the selection changes
+	var targetElement = fw.selection[0].elements[0];
+
+		// wrap the clipboard contents in a group so that we can handle bitmaps.
+		// otherwise, pasting the bitmap as a vector mask completely confuses
+		// it and its X,Y coords get all messed up.  pasting mask groups wouldn't
+		// work without a group wrapper either.  
+	dom.clipPaste("do not resample", null);
+	var pastedElement = fw.selection[0];
+	dom.group("normal");
+	dom.clipCut();
+	
+		// select one of the group's children and group the element in case it's 
+		// a mask.  if we don't, the clipPasteAsMask below will fail.  
+	fw.selection = [targetElement];
+	dom.group();
+
+		// paste the clipboard into the selection's parent group
+	dom.clipPasteAsMask("do not resample", "vector", "add");
+	
+		// ungroup the clip mask
+	dom.ungroup();
+
+		// ungroup the two wrapper groups we created
+	dom.ungroup();
+
+		// reselect the original group
+	dom.selectParents();
+})(); } catch (exception) {
+	if (exception.lineNumber) {
+		alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+	} else {
+		throw exception;
+	}
+}

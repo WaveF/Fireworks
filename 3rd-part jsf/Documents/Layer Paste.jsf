@@ -1,0 +1,44 @@
+try{
+
+
+if(!origDOM.isValid) throw "Source document not found";
+
+var srcDOM = origDOM;
+var destDOM = fw.getDocumentDOM();
+
+function copyLayer(elems)
+{
+	fw.selection = null;
+	srcDOM.makeActive();
+	fw.selection = elems;
+	if(fw.selection.length != 0)
+	{ 
+		srcDOM.clipCopy();
+		destDOM.makeActive();
+		destDOM.clipPaste("do not resample", "vector");
+	}
+	
+	for(var i = 0 ; i < elems.length; i++)
+	{
+		if(elems[i].isLayer)
+		{		
+			var parentLayerNum = destDOM.currentLayerNum;			
+			destDOM.addNewSubLayer(destDOM.currentLayerNum ,null,false);
+			destDOM.setLayerName(-1,elems[i].name);
+			var childLayerNum = destDOM.currentLayerNum;
+			destDOM.reorderLayer(childLayerNum, parentLayerNum, false, i, 2);
+			copyLayer(elems[i].elems);
+			if(!elems[i].frames[frameNum].visible) destDOM.setLayerVisible(-1, -1, false, false);
+			if(elems[i].frames[frameNum].locked) destDOM.setLayerLocked(-1, -1, true, false);			
+			destDOM.currentLayerNum = parentLayerNum;
+		}
+	}
+}
+
+destDOM.addNewLayer(srcDOM.layers[layerNumToCopy].name, false);
+destDOM.setLayerName(-1, srcDOM.layers[layerNumToCopy].name);
+copyLayer(srcDOM.layers[layerNumToCopy].elems);
+
+}catch(e){alert("ERROR: " +  e);}
+
+

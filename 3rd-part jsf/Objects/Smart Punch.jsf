@@ -1,0 +1,284 @@
+/* ===========================================================================
+	
+	File: Smart Punch
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 0.3.0 ($Revision: 1.4 $)
+	Last update - $Date: 2009/05/18 03:45:22 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function()
+{
+	if (fw.selection.length < 2) {
+		alert("To use this command, you must select at least 2 overlapping objects. The topmost object(s) will be punched out of the bottommost object.");
+		return;
+	}
+
+	var dom = fw.getDocumentDOM();
+	var originalPunchers = [].concat(fw.selection);
+	
+		// the element that will be punched is the last item (lowest layer) 
+		// in the selection
+	var target = originalPunchers.pop();
+
+		// convert the target into a single path and bitmap, in case the target
+		// is a group, smart shape, or text block
+	var targets = convertToPathAndBitmap([target]);
+	var targetPath = targets[0];
+	var targetBitmap = targets[1];
+	
+	if (targetPath && targetBitmap) {
+			// there's both a path and a bitmap, so for simplicity, combine the
+			// path and bitmap and into a single bitmap
+		fw.selection = [targetPath, targetBitmap];
+		dom.flattenSelection();
+		target = fw.selection[0];
+	} else {
+			// the punchers will punch into either a path or a bitmap 
+		target = targetPath || targetBitmap;
+	}
+	
+	var targetType = getElementType(target);
+
+		// combine all the punchers into a single path and/or bitmap.  if both
+		// exist, we'll punch each individually into the target below.
+	var punchers = convertToPathAndBitmap(originalPunchers);
+	var puncherPath = punchers[0];
+	var puncherBitmap = punchers[1];
+
+		// the target should be either a path or bitmap by this point, but just 
+		// in case, ignore other types
+	switch (targetType) {
+		case "Path":
+			if (puncherPath) {
+					// use the regular path punch on paths
+				fw.selection = [puncherPath, target];
+				dom.pathPunch();
+				
+					// refresh the pointer to the target, since punching changes it
+				target = fw.selection[0];
+			}
+			
+			if (puncherBitmap) {
+					// give the puncherBitmap a unique name since we want to delete
+					// it after turning it into a path.  doing so seems to lose
+					// the reference to the object stored in puncherBitmap.  so
+					// we'll have to find it by name.
+				fw.selection = [puncherBitmap];
+				var puncherBitmapName = "__puncherBitmap__" + (new Date()).getTime();
+				dom.setElementName(puncherBitmapName);
+				
+				dom.enterPaintMode();
+				dom.selectAll();
+				
+					// force the marquee to snap to the actual pixels by "moving"
+					// the selection by 0
+				dom.moveSelectionBy({x:0, y:0}, false, true);
+				
+					// create the path, which exits bitmap mode and selects the path
+				dom.convertMarqueeToPath();
+				puncherPath = fw.selection[0];
+
+					// to make the bitmap branch equivalent to the path branch, 
+					// select the puncherBitmap that we named above and delete it. 
+					// we have to pass an argument to deleteSelection here simply because 
+					// a bitmap is selected, even though the docs say it's ignored
+					// when not in bitmap mode.
+				fw.selection = dom.findNamedElements(puncherBitmapName);
+				dom.deleteSelection(false);
+				
+					// now use the regular path punch on the path we created from the bitmap
+				fw.selection = [puncherPath, target];
+				dom.pathPunch();
+			}
+			break;
+			
+		case "Image":
+			if (puncherPath) {
+				if (puncherPath.contours[0].isClosed) {
+						// the target is an image, so turn the puncherPath into a saved 
+						// marquee selection under the default name.  use the same edge
+						// type as the path.
+					var marqueeMode = 1;
+					var feather = 0;
+					var fill = puncherPath.pathAttributes.fill;
+					
+						// make sure there's a fill on the object before trying to 
+						// access it, since paths with just a stroke would cause an error
+					if (fill) {
+						feather = fill.feather;
+						
+							// despite what the docs say, only numbers for the marquee
+							// mode seem to work
+						if (fill.edgeType == "hard") {
+							marqueeMode = 1;		// "hard edge"
+						} else {
+							marqueeMode = 2;		// "antialias"
+							
+							if (feather > 0) {
+								marqueeMode = 3;	// "feather"
+							}
+						}
+					}
+
+					fw.selection = [puncherPath];
+					dom.convertPathToMarquee(marqueeMode, feather);
+					dom.saveSelection();
+					dom.exitPaintMode();
+					
+						// select the bitmap and restore the default marquee selection
+					fw.selection = [target];
+					dom.restoreSelection();
+					
+						// deleting the selection will "punch" the bitmap
+					dom.deleteSelection(false);
+					dom.exitPaintMode();
+
+						// refresh the pointer to the target, since punching changes it
+					target = fw.selection[0];
+				} else {
+						// turn unclosed paths into a bitmap so that we use their 
+						// stroke width to punch into the target image, then combine
+						// them with the puncherBitmap, which we'll use below
+					fw.selection = [puncherPath, puncherBitmap];
+					dom.flattenSelection();
+					puncherBitmap = fw.selection[0];
+				}
+			}
+			
+			if (puncherBitmap) {
+				fw.selection = [puncherBitmap];
+				dom.enterPaintMode();
+				dom.selectAll();
+				
+					// force the marquee to snap to the actual pixels by "moving"
+					// the selection by 0
+				dom.moveSelectionBy({x:0, y:0}, false, true);
+				dom.saveSelection();
+				dom.exitPaintMode();
+				dom.deleteSelection(false);
+				
+				fw.selection = [target];
+				dom.enterPaintMode();
+				dom.restoreSelection();
+
+					// deleting the selection will "punch" the bitmap
+				dom.deleteSelection(false);
+				dom.exitPaintMode();
+			}
+			break;
+	}
+	
+	
+	function convertToPathAndBitmap(
+		inElements)
+	{
+			// ungroup everything in inElements, subgroups and all
+		fw.selection = [].concat(inElements);
+		do {
+			var selectionCount = fw.selection.length;
+			dom.ungroup();
+		} while (fw.selection.length != selectionCount);
+	
+			// recreate the elements array, since we may have a different selection
+			// of objects now
+		var elements = [].concat(fw.selection);
+		var paths = [];
+		var bitmaps = [];
+	
+			// go through each element and convert it to either a plain path or bitmap
+		for (var i = 0, len = elements.length; i < len; i++) {
+			var element = elements[i];
+			var elementType = getElementType(element);
+	
+			switch (elementType) {
+				case "Image":
+						// save bitmaps separately
+					bitmaps.push(element);
+					break;
+	
+				case "Text":
+						// convert text elements to a path union
+					fw.selection = [element];
+					dom.convertToPaths();
+					dom.ungroup();
+					dom.pathUnion();
+					paths.push(fw.selection[0]);
+					break;
+	
+				case "Path":
+					if (!element.contours[0].isClosed) {
+							// unclosed paths don't work with dom.pathUnion, so
+							// turn it into a bitmap
+						fw.selection = [element];
+						dom.flattenSelection();
+						bitmaps.push(fw.selection[0]);
+					} else {
+						paths.push(element);
+					}
+					break;
+	
+				case "Instance":
+					fw.selection = [element];
+					dom.flattenSelection();
+					bitmaps.push(fw.selection[0]);
+					break;
+	
+				default:
+						// assume it's a path and save it
+					paths.push(element);
+					break;
+			}
+		}
+		
+		var path = null;
+		var bitmap = null;
+		
+		if (paths.length) {
+				// convert all the paths into one big union
+			fw.selection = paths;
+			dom.pathUnion();
+			path = fw.selection[0];
+		}
+		
+		if (bitmaps.length) {
+			if (bitmaps.length > 1) {
+					// convert all the bitmap punchers into one big bitmap
+				fw.selection = bitmaps;
+				dom.flattenSelection();
+				bitmap = fw.selection[0];
+			} else {
+					// there's just one bitmap selected, so we don't want to 
+					// flatten it, which would flatten any effects applied to it
+				bitmap = bitmaps[0];
+			}
+		}
+		
+		return [path, bitmap];
+	}
+	
+	
+	function getElementType(
+		inElement)
+	{
+		var type = (inElement + "").match(/object (.+)\]/)[1];
+		
+		return (type == "Group" && inElement.isSmartShape) ? "SmartShape" : type;
+	}
+})()
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

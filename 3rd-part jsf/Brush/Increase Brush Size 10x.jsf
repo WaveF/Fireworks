@@ -1,0 +1,4 @@
+var b = fw.getDocumentDOM().pathAttributes.brush;
+if (b && b.diameter){
+	b.diameter = Math.min(b.diameter+10, 1000);
+}

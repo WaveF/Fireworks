@@ -1,0 +1,5 @@
+
+var origDOM = fw.getDocumentDOM();
+var layerNumToCopy = origDOM.currentLayerNum;
+var frameNum = origDOM.currentFrameNum;
+fw.selection = null;

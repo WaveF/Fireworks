@@ -1,0 +1,352 @@
+﻿//--not for batch--
+/*============================================================================*/
+/*                    Copyright (c) 2006 Macromedia, Inc.                     */
+/*                            All rights reserved.                            */
+/*============================================================================*/
+
+
+/*=================================== Main ===================================*/
+
+function main()
+{
+	fw.runScript(Files.getLanguageDirectory() + "/JSFStrings/Add Shadow.jsf");
+	var s    = __tooltips;
+	var errMsg = "";
+	var validObj;
+
+	if (fw.documents.length==0)
+	{
+		validObj = false;
+		errMsg   = Errors.CouldNotCompleteYourRequest+"\n"+Errors.ENoActiveDocument;
+	}
+	else if (fw.selection.length==0)
+	{
+		validObj = false;
+		errMsg   = Errors.CouldNotCompleteYourRequest+"\n"+Errors.ENoActiveSelection;
+	}
+	else
+	{
+		validObj = true;
+		if ((fw.selection.length==1) && (fw.selection[0]=="[object Image]"))
+		{
+			try
+			{
+				fw.getDocumentDOM().convertMarqueeToPath();
+			}
+			catch (e)
+			{
+				validObj = false;
+				errMsg   = Errors.CouldNotCompleteYourRequest+"\n"+
+						   Errors.EBadSelection+"\n"+
+						   s.bitmap;
+			}
+		}
+		else
+		{
+			fw.getDocumentDOM().cloneSelection();
+			for (var i=0; (i<fw.selection.length)&&(validObj); i++)
+			{
+				if      (fw.selection[i]=="[object RectanglePrimitive]") { fw.getDocumentDOM().ungroup(); i--; }
+				else if (fw.selection[i]=="[object Group]")              { fw.getDocumentDOM().ungroup(); i--; }
+				else if (fw.selection[i]=="[object Instance]")           { fw.getDocumentDOM().detachInstanceFromSymbol(); i--; }
+				else if (fw.selection[i]=="[object Text]")               { fw.getDocumentDOM().convertToPaths(); fw.getDocumentDOM().ungroup(); }
+				else if ((fw.selection[i]=="[object Image]") ||
+						 (fw.selection[i]=="[object Hotspot]") ||
+						 (fw.selection[i]=="[object SliceHotspot]"))
+				{
+					validObj = false;
+					errMsg   = Errors.CouldNotCompleteYourRequest+"\n"+
+							   Errors.EBadSelection+"\n"+
+							   s.invalid;
+				}
+				else if ((fw.selection[i].contours.length==1)&&(!fw.selection[i].contours[0].isClosed))
+				{
+					var c = fw.selection[i].contours[0];
+					var n = c.nodes.length;
+					c.nodes.length = n*2;
+					c.nodes[0].predX = c.nodes[0].x;
+					c.nodes[0].predY = c.nodes[0].y;
+					c.nodes[n-1].succX = c.nodes[n-1].x;
+					c.nodes[n-1].succY = c.nodes[n-1].y;
+					var j,k;
+					for (j=(n-1),k=n; j>=0; j--,k++)
+					{
+						c.nodes[k].x     = c.nodes[j].x+1;
+						c.nodes[k].y     = c.nodes[j].y+1;
+						c.nodes[k].predX = c.nodes[j].succX+1;
+						c.nodes[k].predY = c.nodes[j].succY+1;
+						c.nodes[k].succX = c.nodes[j].predX+1;
+						c.nodes[k].succY = c.nodes[j].predY+1;
+					}
+					c.isClosed = true;
+				}
+			}
+			if ((validObj)&&(fw.selection.length>1))
+				fw.getDocumentDOM().pathUnion();
+		}
+	}
+	if (validObj)
+		addPerspectiveShadow(s);
+	else
+	{
+		if (fw.documents.length>0)
+			if ((fw.selection.length>0) && !((fw.selection.length==1) && (fw.selection[0]=="[object Image]")))
+				fw.getDocumentDOM().deleteSelection(false);
+		alert(errMsg);
+	}
+}
+
+function round(n) { return Math.round(n*1000)/1000; }
+
+function addPerspectiveShadow(s)
+{
+	var w = round(fw.selection[0].width);
+	var h = round(fw.selection[0].height);
+	var l = round(fw.selection[0].left);
+	var b = round(fw.selection[0].top+h);
+	var c = {x:round(l+(w/2)), y:b};
+	var x = w;
+	var y = h/2;
+	var shapeName = s.shapeName;
+	var fileName  = fw.userSmartShapesDir+"/"+shapeName+".jsf";
+	Files.deleteFile(fileName);
+	Files.createFile(fileName,".txt","DWMX");
+	var fo = Files.open(fileName, true);
+	fo.write("/* Copyright (c) 2006 Macromedia, Inc. All rights reserved. BEGIN */\n");
+	fo.write("switch(smartShape.operation){\n");
+	fo.write("case 'InsertSmartShapeAt':InsertSmartShapeAt();break;\n");
+	fo.write("case 'BeginDragControlPoint':BeginDragControlPoint();break;\n");
+	fo.write("case 'EndDragControlPoint':EndDragControlPoint();break;\n");
+	fo.write("case 'RedrawSmartShape':RedrawSmartShape();break;}\n");
+
+	fo.write("function InsertSmartShapeAt(){\n");
+	fo.write("var s=smartShape.elem;\n");
+	fo.write("var w="+w+";\n");
+	fo.write("var h="+h+";\n");
+	fo.write("var l="+l+";\n");
+	fo.write("var b="+b+";\n");
+	fo.write("var c={x:"+c.x+",y:"+c.y+"};\n");
+	fo.write("var x="+x+";\n");
+	fo.write("var y="+y+";\n");
+	fo.write("s.elements[0]=new Path;\n");
+	fo.write("/* Copyright (c) 2006 Macromedia, Inc. All rights reserved. END */\n");
+	fo.write("/* User-created path(s) definition code. BEGIN */\n");
+	var cn, n, x, y, px, py, sx, sy;
+	for (cn=0; cn<fw.selection[0].contours.length; cn++)
+	{
+		fo.write("s.elements[0].contours["+cn+"]=new Contour;\n");
+		for (n=0; n<fw.selection[0].contours[cn].nodes.length; n++)
+		{
+			x  = round(fw.selection[0].contours[cn].nodes[n].x);
+			y  = round(fw.selection[0].contours[cn].nodes[n].y);
+			px = round(fw.selection[0].contours[cn].nodes[n].predX);
+			py = round(fw.selection[0].contours[cn].nodes[n].predY);
+			sx = round(fw.selection[0].contours[cn].nodes[n].succX);
+			sy = round(fw.selection[0].contours[cn].nodes[n].succY);
+			fo.write("newNode("+cn+","+n+","+px+","+py+","+x+","+y+","+sx+","+sy+");\n");
+		}
+		fo.write("s.elements[0].contours["+cn+"].isClosed="+fw.selection[0].contours[cn].isClosed+";\n");
+	}
+	fo.write("/* User-created path(s) definition code. END */\n");
+	fo.write("/* Copyright (c) 2006 Macromedia, Inc. All rights reserved. BEGIN */\n");
+	fo.write("s.elements[0].pathAttributes.fill={category:'fc_Linear',ditherColors:['#000000','#000000'],edgeType:'antialiased',feather:0,gradient:{name:'cn_Custom',nodes:[{color:'#ffffff',isOpacityNode:false,position:0},{color:'#000000',isOpacityNode:false,position:1}],opacityNodes:[{color:'#00000000',isOpacityNode:true,position:0},{color:'#000000bf',isOpacityNode:true,position:1}]},name:'Linear Smooth',pattern:null,shape:'linear',stampingMode:'blend opaque',textureBlend:0,webDitherTransparent:false};\n");
+	fo.write("s.elements[0].pathAttributes.fillColor='#000000';\n");
+	fo.write("s.elements[0].pathAttributes.brush=null;\n");
+	fo.write("s.controlPoints.length=3;\n");
+	fo.write("var c0,c1,c2;\n");
+	fo.write("c0=s.controlPoints[0];\n");
+	fo.write("c0.x=c.x+w;\n");
+	fo.write("c0.y=c.y-h/2;\n");
+	fo.write("c0.name=w;\n");
+	fo.write("c0.toolTip='"+s.perspective+"';\n");
+	fo.write("c1=s.controlPoints[1];\n");
+	fo.write("c1.x=c0.x-w/2;\n");
+	fo.write("c1.y=c.y-h/2;\n");
+	fo.write("c1.name=h;\n");
+	fo.write("c1.toolTip='"+s.direction+"';\n");
+	fo.write("c2=s.controlPoints[2];\n");
+	fo.write("c2.x=l;\n");
+	fo.write("c2.y=b;\n");
+	fo.write("c2.visible=false;\n");
+	fo.write("s.customData['node']=new Array();\n");
+	fo.write("s.customData['pred']=new Array();\n");
+	fo.write("s.customData['succ']=new Array();\n");
+	fo.write("var i,j,k,n;\n");
+	fo.write("for(i=0,k=0;i<s.elements[0].contours.length;i++)\n");
+	fo.write("for(j=0;j<s.elements[0].contours[i].nodes.length;j++,k++){\n");
+	fo.write("n=s.elements[0].contours[i].nodes[j];\n");
+	fo.write("s.customData['node'][k]={x1:n.x-c2.x,y1:c2.y-n.y};\n");
+	fo.write("s.customData['pred'][k]={x1:n.predX-c2.x,y1:c2.y-n.predY};\n");
+	fo.write("s.customData['succ'][k]={x1:n.succX-c2.x,y1:c2.y-n.succY};}\n");
+	fo.write("updateShadow();\n");
+	fo.write("s.customData['shapeName']='shadow';\n");
+	fo.write("s.customData['offsetY']=-h/2;\n");
+	fo.write("s.customData['offsetX']=w/2;\n");
+	fo.write("s.customData['width']=w;}\n");
+
+	fo.write("function BeginDragControlPoint(){\n");
+	fo.write("var s=smartShape.elem;\n");
+	fo.write("var c0=s.controlPoints[0];\n");
+	fo.write("var c1=s.controlPoints[1];\n");
+	fo.write("var c2=s.controlPoints[2];\n");
+	fo.write("var w=parseInt(c0.name);\n");
+	fo.write("var w_=(c0.x-c1.x)*2;\n");
+	fo.write("var p=smartShape.GetDefaultMoveParms();\n");
+	fo.write("max=p.maxX;\n");
+	fo.write("min=p.minX;\n");
+	fo.write("s.elements[1]=new Path;\n");
+	fo.write("s.elements[1].contours[0]=new Contour;\n");
+	fo.write("s.elements[1].contours[0].nodes.length=0;\n");
+	fo.write("addPathPoint(s.elements[1].contours[0],c2.x,c2.y);\n");
+	fo.write("addPathPoint(s.elements[1].contours[0],c0.x-w_,c0.y);\n");
+	fo.write("addPathPoint(s.elements[1].contours[0],c0.x,c0.y);\n");
+	fo.write("addPathPoint(s.elements[1].contours[0],c2.x+w,c2.y);\n");
+	fo.write("s.elements[1].contours[0].isClosed=true;\n");
+	fo.write("switch(smartShape.currentControlPointIndex){\n");
+	fo.write("case 0:\n");
+	fo.write("s.customData['prevMousePos']={x:c0.x,y:c0.y}\n");
+	fo.write("p.deltaYtoY=0;\n");
+	fo.write("p.minX=c1.x;\n");
+	fo.write("c0.RegisterMove(p);\n");
+	fo.write("s.elements[1].contours[0].nodes[2].RegisterMove(p);\n");
+	fo.write("p.deltaXtoX=-1;\n");
+	fo.write("p.minX=min;\n");
+	fo.write("p.maxX=c1.x;\n");
+	fo.write("s.elements[1].contours[0].nodes[1].RegisterMove(p);break;\n");
+	fo.write("case 1:\n");
+	fo.write("s.customData['prevMousePos']={x:c1.x,y:c1.y}\n");
+	fo.write("p.constrain45Key='shiftKey'\n");
+	fo.write("s.elements[1].contours[0].nodes[1].RegisterMove(p);\n");
+	fo.write("s.elements[1].contours[0].nodes[2].RegisterMove(p);\n");
+	fo.write("c0.RegisterMove(p);\n");
+	fo.write("c1.RegisterMove(p);break;}}\n");
+
+	fo.write("function EndDragControlPoint(){\n");
+	fo.write("var s=smartShape.elem;\n");
+	fo.write("s.elements.length=1;\n");
+	fo.write("var c0=s.controlPoints[0];\n");
+	fo.write("var c1=s.controlPoints[1];\n");
+	fo.write("var c2=s.controlPoints[2];\n");
+	fo.write("var pm=s.customData['prevMousePos'];\n");
+	fo.write("var cm=smartShape.currentMousePos;\n");
+	fo.write("var reset=false;\n");
+	fo.write("switch (smartShape.currentControlPointIndex){\n");
+	fo.write("case 1:\n");
+	fo.write("if((Math.abs(c1.x-pm.x)<0.001)&&(Math.abs(c1.y-pm.y)<0.001)){\n");
+	fo.write("reset=!smartShape.ctrlCmdKeyDown;\n");
+	fo.write("var dx=c0.x-c1.x;\n");
+	fo.write("c1.x=c2.x+parseInt(c0.name)/2\n");
+	fo.write("c0.x=c1.x+dx;\n");
+	fo.write("if(reset){\n");
+	fo.write("c1.y=c2.y-parseInt(c1.name);\n");
+	fo.write("c0.y=c1.y;}}\n");
+	fo.write("case 0:\n");
+	fo.write("if((Math.abs(c0.x-pm.x)<0.001)||(reset))\n");
+	fo.write("c0.x=c1.x+parseInt(c0.name)/2;break;}\n");
+	fo.write("updateShadow();\n");
+	fo.write("s.customData['offsetY']=c1.y-c2.y;\n");
+	fo.write("s.customData['offsetX']=c1.x-(c2.x+parseInt(c0.name)/2);\n");
+	fo.write("s.customData['width']=(c0.x-c1.x)*2;}\n");
+
+	fo.write("function RedrawSmartShape(){\n");
+	fo.write("var s=smartShape.elem;\n");
+	fo.write("var c0=s.controlPoints[0];\n");
+	fo.write("var c1=s.controlPoints[1];\n");
+	fo.write("var c2=s.controlPoints[2];\n");
+	fo.write("var dx=parseInt(s.customData['offsetX']);\n");
+	fo.write("var dy=parseInt(s.customData['offsetY']);\n");
+	fo.write("var w=parseInt(s.customData['width']);\n");
+	fo.write("c1.x=(c2.x+parseInt(c0.name)/2)+dx;\n");
+	fo.write("c1.y=c2.y+dy;\n");
+	fo.write("c0.x=c1.x+w/2;\n");
+	fo.write("c0.y=c1.y;\n");
+	fo.write("updateShadow();}\n");
+
+	fo.write("function evalAngle(x,y){return Math.atan2(y,x);}\n");
+	fo.write("function addPathPoint(contour,x,y){addPathPointBez(contour,x,y,x,y,x,y);}\n");
+	fo.write("function addPathPointBez(contour,x,y,px,py,sx,sy){\n");
+	fo.write("contour.nodes.length++;\n");
+	fo.write("var n=contour.nodes[contour.nodes.length-1];\n");
+	fo.write("n.x=x;\n");
+	fo.write("n.y=y;\n");
+	fo.write("n.predX=px;\n");
+	fo.write("n.predY=py;\n");
+	fo.write("n.succX=sx;\n");
+	fo.write("n.succY=sy;}\n");
+
+	fo.write("function updateShadow(){\n");
+	fo.write("var s=smartShape.elem;\n");
+	fo.write("var c0=s.controlPoints[0];\n");
+	fo.write("var c1=s.controlPoints[1];\n");
+	fo.write("var c2=s.controlPoints[2];\n");
+	fo.write("var w=parseInt(c0.name);\n");
+	fo.write("var w_=(c0.x-c1.x)*2;\n");
+	fo.write("var h=parseInt(c1.name);\n");
+	fo.write("var cx=c0.x-w_;\n");
+	fo.write(" var c_={x:(c2.x+w/2),y:c2.y};\n");
+	fo.write("var n,n_,a,dx,dy,i,j,k;\n");
+	fo.write("n_ = {x:0,y:0};\n");
+	fo.write("if (!(s.customData['node'] instanceof FwArray)) s.customData['node'] = eval(s.customData['node']);\n");
+	fo.write("if (!(s.customData['pred'] instanceof FwArray)) s.customData['pred'] = eval(s.customData['pred']);\n");
+	fo.write("if (!(s.customData['succ'] instanceof FwArray)) s.customData['succ'] = eval(s.customData['succ']);\n");
+	fo.write("for(i=0,k=0;i<s.elements[0].contours.length;i++)\n");
+	fo.write("for(j=0;j<s.elements[0].contours[i].nodes.length;j++,k++){\n");
+	fo.write("n=s.elements[0].contours[i].nodes[j];\n");
+	fo.write("n_.x = parseInt(s.customData['node'][k]['x1']);\n");
+	fo.write("n_.y = parseInt(s.customData['node'][k]['y1']);\n");
+	fo.write("a=-(evalAngle(((cx+n_.x*(w_/w))-(c2.x+n_.x)),(c0.y-c2.y)));\n");
+	fo.write("dy=(c2.y-c0.y)*(n_.y/h);\n");
+	fo.write("dx=dy/Math.tan(a);\n");
+	fo.write("n.x=c2.x+n_.x+dx;\n");
+	fo.write("n.y=c2.y-dy;\n");
+	fo.write("n_.x = parseInt(s.customData['pred'][k]['x1']);\n");
+	fo.write("n_.y = parseInt(s.customData['pred'][k]['y1']);\n");
+	fo.write("a=-(evalAngle(((cx+n_.x*(w_/w))-(c2.x+n_.x)),(c0.y-c2.y)));\n");
+	fo.write("dy=(c2.y-c0.y)*(n_.y/h);\n");
+	fo.write("dx=dy/Math.tan(a);\n");
+	fo.write("n.predX=c2.x+n_.x+dx;\n");
+	fo.write("n.predY=c2.y-dy;\n");
+	fo.write("n_.x = parseInt(s.customData['succ'][k]['x1']);\n");
+	fo.write("n_.y = parseInt(s.customData['succ'][k]['y1']);\n");
+	fo.write("a=-(evalAngle(((cx+n_.x*(w_/w))-(c2.x+n_.x)),(c0.y-c2.y)));\n");
+	fo.write("dy=(c2.y-c0.y)*(n_.y/h);\n");
+	fo.write("dx=dy/Math.tan(a);\n");
+	fo.write("n.succX=c2.x+n_.x+dx;\n");
+	fo.write("n.succY=c2.y-dy;}\n");
+	fo.write("dx=(Math.abs(c1.x-c_.x)<10)?(c1.x-10):c_.x;\n");
+	fo.write("var f=s.elements[0].pathAttributes.fillHandle1;\n");
+	fo.write("f.x=dx;\n");
+	fo.write("f.y=c2.y+(c1.y-c2.y);\n");
+	fo.write("s.elements[0].pathAttributes.fillHandle1=f;\n");
+	fo.write("f=s.elements[0].pathAttributes.fillHandle2;\n");
+	fo.write("f.x=dx;\n");
+	fo.write("f.y=c2.y;\n");
+	fo.write("s.elements[0].pathAttributes.fillHandle2=f;\n");
+	fo.write("f=s.elements[0].pathAttributes.fillHandle3;\n");
+	fo.write("f.x=dx;\n");
+	fo.write("f.y=c2.y;\n");
+	fo.write("s.elements[0].pathAttributes.fillHandle3=f;}\n");
+
+	fo.write("function newNode(c,n,px,py,x,y,sx,sy){\n");
+	fo.write("var s=smartShape.elem;\n");
+	fo.write("s.elements[0].contours[c].nodes[n]=new ContourNode;\n");
+	fo.write("s.elements[0].contours[c].nodes[n].predX=px;\n");
+	fo.write("s.elements[0].contours[c].nodes[n].predY=py;\n");
+	fo.write("s.elements[0].contours[c].nodes[n].x=x;\n");
+	fo.write("s.elements[0].contours[c].nodes[n].y=y;\n");
+	fo.write("s.elements[0].contours[c].nodes[n].succX=sx;\n");
+	fo.write("s.elements[0].contours[c].nodes[n].succY=sy;}\n");
+	fo.write("/* Copyright (c) 2006 Macromedia, Inc. All rights reserved. END */");
+	fo.close();
+	fw.getDocumentDOM().deleteSelection(false);
+	fw.getDocumentDOM().insertSmartShapeAt(shapeName,{x:0,y:0},false);
+	fw.getDocumentDOM().arrange("backward");
+	Files.deleteFile(fileName);
+}
+
+main();
+
+/*============================================================================*/
+/*                    Copyright (c) 2006 Macromedia, Inc.                     */
+/*                            All rights reserved.                            */
+/*============================================================================*/

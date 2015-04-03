@@ -1,0 +1,16 @@
+﻿/*---------------------------------------------------------*/
+/*                   miniCG.com - by WaveF                 */
+/*---------------------------------------------------------*/
+
+var totalFrames = fw.getDocumentDOM().frameCount;
+var currentFrame = fw.getDocumentDOM().currentFrameNum
+var step = prompt("Enter delete frames interval（間隔值）:", 1);
+
+if (step <= 0 || step == null || isNaN(step)){
+    alert("Invalid value, command negative（無效值）.");
+}else{
+    step++;
+    for(var i=totalFrames-1; i>currentFrame; i-=step){
+       fw.getDocumentDOM().deleteFrames(i, 1);
+    }
+}

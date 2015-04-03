@@ -1,0 +1,77 @@
+// Fireworks JavaScript Command
+// Copy to Fireworks/Configuration/Commands/
+// 2007 Aaron Beall - http://fireworks.abeall.com
+// Version 1.1
+// Requires CS3+
+
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+function UpperCaseFirst(){
+	if(!dom) return;
+	
+	var texts = [];
+	for(var s in sel){
+		if(sel[s] == "[object Text]")
+			texts.push(sel[s]);
+	}
+	
+	if(!texts.length)
+		return alert("Please select at least one text box or some text.");
+	
+	if(texts.length > 1){
+		for(var t in texts)
+			setTextChars(texts[t],toTitleCase(texts[t].textChars));
+	}else{
+		var selIndex = fw.textInsertionIndex;
+		var selLength = fw.textInsertionLength;
+		
+		if(selIndex == -1){
+			setTextChars(texts[0],toTitleCase(texts[0].textChars));
+		}else{
+			if(selLength == 0)
+				return alert("Select some text, or select the entire text box.");
+			var chars = texts[0].textChars;
+			setTextChars( texts[0],chars.substring(0,selIndex) + toTitleCase(chars.substring(selIndex,selIndex+selLength)) + chars.substring(selIndex+selLength,chars.length) );
+		}
+	}
+	
+	// change first letter after every whitespace to uppercase
+	/*function doUpperCaseFirst(txt){
+		txt = txt.toLowerCase(); // lowercase everything first
+		var cha, isWhite = true, newText = "";
+		for(var c = 0; c<txt.length; c++){
+			cha = txt.charAt(c);
+			if(cha == ' ' || cha == '\n' || cha == '\r'){
+				isWhite = true;
+				newText += cha;
+			}else if(isWhite){
+				isWhite = false;
+				newText += cha.toUpperCase();
+			}else{
+				newText += cha;
+			}
+		}
+		return newText;
+	}*/
+	
+	// convert text to "Title Case"
+	function toTitleCase(txt){
+		txt = txt.toLowerCase(); // lowercase everything first
+		return txt.replace(/\b([a-z])/g,function($0){return $0.toUpperCase()});
+	}
+	
+	// replace the characters in a text box while preserving textRuns
+	function setTextChars(text,txt){
+		//text.textChars = txt; // almost so easy! but it breaks undo
+		//dom.changeCurrentPage(dom.currentPageNum); // hack to force refresh the screen, because changing textChars doesn't refresh the screen
+		var runs = text.textRuns, run, charCount = 0;
+		for(var i=0; i<runs.textRuns.length; i++){
+			run = runs.textRuns[i];
+			run.characters = txt.substr(charCount,run.characters.length);
+			charCount += run.characters.length;
+		}
+		text.textRuns = runs;
+	}
+}
+UpperCaseFirst();

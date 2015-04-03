@@ -1,0 +1,276 @@
+/* ===========================================================================
+
+	File: Export as Favicon
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 1.0.0 ($Revision: 1.14 $)
+	Last update - $Date: 2009/10/08 18:03:26 $
+
+	png2ico is Copyright (c) 2000-2003 by Matthias Benkmann.
+	see png2ico/LICENSE for details.
+
+	Thanks to Matthias Benkmann for creating the png2ico utility that this
+	command uses to create the favicon. http://www.winterdrache.de/freeware
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function()
+{
+	var dom	= fw.getDocumentDOM();
+
+	if (!dom) {
+		alert("Please open a document before running this command.")
+		return;
+	}
+
+	if (fw.platform == "win") {
+		var k = {
+			BatchFilename: "export.bat",
+			ConverterPath: fw.currentScriptDir + "/png2ico/png2ico.exe",
+			DeleteCommand: "rmdir ",
+			LineEnding: "\n"
+		}
+	} else {
+		var k = {
+				// we tried several approaches to creating a batch file that works
+				// on OS X.  the only one that seemed to work consistently is to
+				// create an AppleScript packaged as an app that FW would launch.
+				// the AS would figure out its current path and then pass that to
+				// the export.sh shell script, which already has its execute bit
+				// set.  that shell script would then include the simple script
+				// that this command writes out.  it's kludgy, but trying to make
+				// the shell script executable in the AS didn't seem to work, nor
+				// did launching the export.sh shell script directly from FW.
+			BatchFilename: "paths.sh",
+			BatchFilePath: fw.currentScriptDir + "/png2ico",
+			ConverterPath: fw.currentScriptDir + "/png2ico/png2ico",
+			LaunchConverterPath: fw.currentScriptDir + "/png2ico/export.app",
+			DeleteCommand: "rm ",
+			LineEnding: " && "
+		}
+	}
+
+		// catch any exceptions from the page API calls in case we're running in FW8
+	try {
+			// go to the first page and reset the dom, so that we get the current
+			// page's size
+		var startingPage = dom.currentPageNum;
+		dom.changeCurrentPage(0);
+		dom	= fw.getDocumentDOM();
+	} catch(exception) {}
+
+	if (dom.width != 16 || dom.height != 16) {
+		alert("To create a favicon, the first page in the document document must be 16 X 16 pixels.");
+		return;
+	}
+
+		// ask the user for a path to the export directory.  default to the
+		// last one, if any, or the folder where the file currently resides.
+	var folderPath = fw.browseForFolderURL("Choose a folder to export the favicon to:",
+			dom.lastExportDirectory || dom.filePathForRevert);
+
+	if (!folderPath) {
+			// the user canceled the confirmation dialog
+		return;
+	}
+
+		// append the favicon filename
+	var faviconPath = folderPath + "/favicon.ico";
+
+		// check for an existing favicon.ico and confirm overwrite
+	if (Files.exists(faviconPath)) {
+		if (!confirm('"favicon.ico" already exists in ' +
+				convertURLToOSPath(folderPath) + '\n\nDo you want to replace the existing file?')) {
+			return;
+		}
+	}
+
+		// export as a 32 bit PNG so we get whatever transparency may have been
+		// used in the current doc
+	var exportOptions = {
+		animAutoCrop: true,
+		animAutoDifference: true,
+		applyScale: false,
+		colorMode: "32 bit",
+		crop: false,
+		cropBottom: 0,
+		cropLeft: 0,
+		cropRight: 0,
+		cropTop: 0,
+		ditherMode: "none",
+		ditherPercent: 100,
+		exportFormat: "PNG",
+		frameInfo: [  ],
+		interlacedGIF: false,
+		jpegQuality: 80,
+		jpegSelPreserveButtons: false,
+		jpegSelPreserveText: true,
+		jpegSelQuality: 90,
+		jpegSelQualityEnabled: false,
+		jpegSmoothness: 0,
+		jpegSubsampling: 0,
+		localAdaptive: true,
+		lossyGifAmount: 0,
+		macCreator: "????",
+		macFileType: "????",
+		name: null,
+		numCustomEntries: 0,
+		numEntriesRequested: 0,
+		numGridEntries: 6,
+		optimized: true,
+		paletteEntries: null,
+		paletteInfo: null,
+		paletteMode: "adaptive",
+		paletteTransparency: "none",
+		percentScale: 100,
+		progressiveJPEG: false,
+		savedAnimationRepeat: 0,
+		sorting: "none",
+		useScale: true,
+		webSnapAdaptive: false,
+		webSnapTolerance: 14,
+		xSize: 0,
+		ySize: 0
+	};
+
+		// default to a hard-coded path, if any.  the Mac has to use a fixed path,
+		// but Windows will use a temp directory, to avoid problems on Vista.
+	var tempPath = k.BatchFilePath;
+
+	if (!tempPath) {
+			// create a temp directory where we'll store the batch file and PNG output.
+			// annoyingly, getTempFilePath returns the same path over and over if you
+			// don't create the file after calling it, so just calling it once and
+			// creating a unique folder is simplest.  also, despite what the docs say,
+			// the parameter isn't optional, but it can be null.
+		tempPath = Files.getTempFilePath(null);
+
+		if (!Files.createDirectory(tempPath)) {
+			alert('The temporary directory "' + tempPath + '" could not be created.');
+			return;
+		}
+	}
+
+	var batchFilePath = tempPath + "/" + k.BatchFilename;
+	var pngPath = tempPath + "/favicon_1.png";
+	var exportedPaths = [pngPath];
+
+		// create the temp PNG for the first page
+	dom.exportTo(pngPath, exportOptions);
+
+		// catch any exceptions from the page API calls in case we're running in FW8
+	try {
+			// we've already exported the first page, so start at the second (1).
+			// we'll export every page, even if it's not the right size, since
+			// png2ico will ignore images of the wrong type.
+		for (var i = 1; i < dom.pagesCount; i++) {
+			dom.changeCurrentPage(i);
+			dom = fw.getDocumentDOM();
+			pngPath = tempPath + "/favicon_" + (i + 1) + ".png";
+			exportedPaths.push(pngPath);
+			dom.exportTo(pngPath, exportOptions);
+		}
+
+		dom.changeCurrentPage(startingPage);
+		dom = fw.getDocumentDOM();
+	} catch (exception) {}
+
+		// get rid of the file:///C|/ stuff, since we'll be using these paths in
+		// batch file commands below
+	for (var i = 0; i < exportedPaths.length; i++) {
+		exportedPaths[i] = convertURLToOSPath(exportedPaths[i]);
+	}
+
+	if (fw.platform == "win") {
+		var batchFileText = [
+				// the first line of the batch file is of the form:
+				// png2ico.exe faviconPath size16Path [size32Path ...]
+				// where the 32px and other sizes are optional
+			[
+				convertURLToOSPath(k.ConverterPath),
+				convertURLToOSPath(faviconPath),
+				exportedPaths.join(" ")
+			].join(" "),
+			k.DeleteCommand + convertURLToOSPath(tempPath) + " /s /q"
+		].join(k.LineEnding);
+	} else {
+			// deleting the temp files on the Mac doesn't seem to work, so just
+			// leave them there
+		var batchFileText = [
+			[
+				"./png2ico",
+				convertURLToOSPath(faviconPath),
+				exportedPaths.join(" ")
+			].join(" "),
+			k.DeleteCommand + "*.png",
+			k.DeleteCommand + "paths.sh"
+		].join(k.LineEnding);
+	}
+
+		// create the batch file and write out its contents.  but first delete
+		// any existing file, which seems to be necessary on Mac but not Windows.
+		// otherwise, the app can hang after export.
+	Files.deleteFileIfExisting(batchFilePath);
+	Files.createFile(batchFilePath, "TEXT", "????");
+	var batchFile = Files.open(batchFilePath, true);
+	batchFile.write(batchFileText);
+	batchFile.close();
+
+	try {
+			// run either the batch file on Windows or the hard-coded AppleScript
+			// on the Mac.  we have to give FW an absolute path to the batch file.
+		fw.launchApp((k.LaunchConverterPath || batchFilePath), []);
+	} catch (exception) {
+		// for some idiotic reason, launching the AppleScript throws an error here,
+		// *unless* the script shows a dialog in the Finder, in which case it's
+		// fine.  wtf?  anyway, we'll just throw away the exception, if it happens.
+	}
+
+
+	function convertURLToOSPath(
+		inURL)
+	{
+		if (fw.platform == "win") {
+				// replace file:///C| with C: and turn / into \
+			var path = inURL.replace(/file:\/\/\/(.)\|/, "$1:");
+			path = path.replace(/\//g, "\\");
+		} else {
+				// replace file:/// with /Volumes/
+			var path = "/Volumes" + inURL.replace(/file:\/\//, "");
+		}
+
+			// we also have to convert the URL-encoded chars back into normal chars
+			// so that the OS can handle the path, and quote the path in case it
+			// contains spaces
+		return '"' + unescape(path) + '"';
+	}
+
+
+	function unescape(
+		inString)
+	{
+		return inString.replace(/%([A-Z0-9]{2})/g,
+			function(
+				inMatch,
+				inHex)
+			{
+				return String.fromCharCode(parseInt(inHex, 16));
+			}
+		)
+	}
+})();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

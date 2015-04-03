@@ -1,0 +1,42 @@
+/* ===========================================================================
+
+	File: New Favicon - 16X16 and 32X32
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 1.0.0 ($Revision: 1.3 $)
+	Last update - $Date: 2009/09/11 04:33:58 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function()
+{
+	fw.createFireworksDocument({ x: 16, y: 16 }, { pixelsPerUnit: 72, units: "inch" }, "#ffffff00");
+
+	var dom	= fw.getDocumentDOM();
+	
+	dom.setPageName(0, "16 X 16 Image");
+
+		// add the 32 X 32 page	
+	dom.addNewPage();
+	dom	= fw.getDocumentDOM();
+	dom.setPageName(1, "32 X 32 Image");
+	dom.setDocumentCanvasSize({ left: 0, top: 0, right: 32, bottom: 32 }, true);
+	
+		// go back to 16 X 16
+	dom.changeCurrentPage(0);
+})();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

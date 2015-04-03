@@ -1,0 +1,2 @@
+var SUBSELECTION_TOOL = 'Subselection';
+fw.getDocumentDOM().pathIntersect();

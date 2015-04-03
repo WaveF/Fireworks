@@ -1,0 +1,160 @@
+/*
+Fireworks JavaScript Command
+Converts selection to a seamless tile image via edge blending
+Install by copying to Fireworks/Configuration/Commands/
+Aaron Beall - http://abeall.com
+Version 1.1
+*/
+
+/*
+TODO:
+- add option to tile vertically, horizontally, or both
+- add in option to choose stitching side: right (current) or left, and bottom (current) or top
+*/
+
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+function SeamlessTile(){
+	if(!dom) return;
+	
+	// validate selection
+	if(!sel.length)
+		return alert('Select an image. This command will create a seamless tile from your selection.');
+	
+	// user input
+	var input;
+	do{
+		input = prompt('Enter a blend percent (1-100):', fw.SeamlessTile_input||25);
+		if(input == null) return;
+	}while(!validateInput());
+	function validateInput(){
+		input = Number(input);
+		if(isNaN(input))
+			return alert('Invalid input! Enter numbers only.');
+		if(input <= 0 || input > 100)
+			return alert('Invalid input! Enter a number between 1 and 100.');
+		return true;
+	}
+	fw.SeamlessTile_input = input;
+	
+	// flatten multiple selected elements or create a tile from each
+	if(sel.length > 1 && fw.yesNoDialog('You have multiple objects selected. Flatten into one bitmap?')){
+		dom.flattenSelection();
+	}else{
+		for(var s = 0; s < sel.length; s++){
+			if(sel[s] != '[object Image]'){
+				if(confirm('The selection will be flattened. Continue?')){
+					dom.flattenSelection();
+					break;
+				}else{
+					return false;
+				}
+			}
+		}
+	}
+	
+	// tile each selected element (usually just one element by this point)
+	sel = [].concat(fw.selection);
+	for(var s = 0; s < sel.length; s++){
+		fw.selection = [sel[s]];
+		dom.flattenSelection();
+		makeTile(input / 200);
+	}
+}
+
+//try{
+SeamlessTile();
+//}catch(e){ alert([e, e.lineNumber, e.fileName].join("\n")) };
+
+// make a blended tile from
+function makeTile(blendPercent){
+	var GRADIENT = { category:"fc_Linear", ditherColors:[ "#000000", "#000000" ], edgeType:"antialiased", feather:0, gradient:{ name:"cn_Custom", nodes:[ { color:"#ffffff", isOpacityNode:false, position:0 }, { color:"#000000", isOpacityNode:false, position:1 } ], opacityNodes:[ { color:"#000000", isOpacityNode:true, position:0 }, { color:"#000000", isOpacityNode:true, position:0.98888885974884033 } ] }, name:"Linear Smooth", pattern:null, shape:"linear", stampingMode:"blend opaque", textureBlend:0, webDitherTransparent:false };
+	var bounds = dom.getSelectionBounds();
+	var tempName = '__SEAMLESS_TILE_SELECTION__' + escape((new Date()).getTime()), oldName = fw.selection[0].name, bmp;
+	fw.selection[0].name = tempName;
+	
+	// tile vertical (top/bottom)
+	var blend = Math.round(fw.selection[0].height * blendPercent);
+	
+	// copy bottom
+	dom.cloneSelection();
+	fw.selection[0].name = null;
+	dom.enterPaintMode();
+	dom.setSelectionMask({maskBounds:{left:bounds.left, top:bounds.top, right:bounds.right, bottom:bounds.bottom - blend}, maskKind:'rectangle', maskEdgeMode:'hard edge', featherAmount:0, maskData:null}, 'replace');
+	dom.deleteSelection(false);
+	dom.exitPaintMode();
+	bmp = fw.selection[0];
+	
+	// delete bottom
+	fw.selection = dom.findNamedElements(tempName);
+	dom.enterPaintMode();
+	dom.setSelectionMask({maskBounds:{left:bounds.left, top:bounds.bottom - blend, right:bounds.right, bottom:bounds.bottom}, maskKind:'rectangle', maskEdgeMode:'hard edge', featherAmount:0, maskData:null}, 'replace');
+	dom.deleteSelection(false);
+	dom.exitPaintMode();
+	
+	// move to top
+	fw.selection = [bmp];
+	dom.moveSelectionBy({x:0, y:-(bounds.bottom - bounds.top) + blend}, false, false);
+	bmp = fw.selection[0];
+	
+	// fade mask
+	dom.addNewRectangle({left:bmp.left, right:bmp.left + bmp.width, top:bmp.top, bottom:bmp.top + bmp.height}, 0);
+	dom.setFill(GRADIENT);
+	dom.setBrush(null);
+	dom.setOpacity(100);
+	moveFillVectorHandleTo({x:bmp.left, y:bmp.top}, "start", false, true);
+	moveFillVectorHandleTo({x:bmp.left, y:bmp.top + bmp.height}, "end1", false, true);
+	dom.clipCut();
+	fw.selection = [bmp];
+	dom.clipPasteAsMask("do not resample", "image", "replace");
+	fw.selection = [bmp].concat(dom.findNamedElements(tempName));
+	dom.flattenSelection();
+	fw.selection[0].name = tempName;
+	
+	// tile horizontal (left/right)
+	blend = Math.round(fw.selection[0].width * blendPercent);
+	
+	// copy right side
+	dom.cloneSelection();
+	fw.selection[0].name = null;
+	dom.enterPaintMode();
+	dom.setSelectionMask({maskBounds:{left:bounds.left, top:bounds.top, right:bounds.right - blend, bottom:bounds.bottom}, maskKind:'rectangle', maskEdgeMode:'hard edge', featherAmount:0, maskData:null},'replace');
+	dom.deleteSelection(false);
+	dom.exitPaintMode();
+	bmp = fw.selection[0];
+	
+	// delete right side
+	fw.selection = dom.findNamedElements(tempName);
+	dom.enterPaintMode();
+	dom.setSelectionMask({maskBounds:{left:bounds.right - blend, top:bounds.top, right:bounds.right, bottom:bounds.bottom}, maskKind:'rectangle', maskEdgeMode:'hard edge', featherAmount:0, maskData:null},'replace');
+	dom.deleteSelection(false);
+	dom.exitPaintMode();
+	
+	// move to top
+	fw.selection = [bmp];
+	dom.moveSelectionBy({x:-(bounds.right - bounds.left) + blend, y:0}, false, false);
+	bmp = fw.selection[0];
+	
+	// fade mask
+	dom.addNewRectangle({left:bmp.left, right:bmp.left + bmp.width, top:bmp.top, bottom:bmp.top + bmp.height}, 0);
+	dom.setFill(GRADIENT);
+	dom.setBrush(null);
+	dom.setOpacity(100);
+	moveFillVectorHandleTo({x:bmp.left, y:bmp.top}, "start", false, true);
+	moveFillVectorHandleTo({x:bmp.left + bmp.width, y:bmp.top}, "end1", false, true);
+	dom.clipCut();
+	fw.selection = [bmp];
+	dom.clipPasteAsMask("do not resample", "image", "replace");
+	fw.selection = [bmp].concat(dom.findNamedElements(tempName));
+	dom.flattenSelection();
+	fw.selection[0].name = oldName;
+}
+
+function moveFillVectorHandleTo(position, whichHandle, bConstrain, bMoveJustOne){
+	// requires a single selected path
+	var pathAttrs = fw.selection[0].pathAttributes;
+	var origin = {x:pathAttrs.fillHandle1.x, y:pathAttrs.fillHandle1.y};
+	var delta = {x:position.x - origin.x, y:position.y - origin.y}
+	dom.moveFillVectorHandleBy(delta, whichHandle, bConstrain, bMoveJustOne);
+}

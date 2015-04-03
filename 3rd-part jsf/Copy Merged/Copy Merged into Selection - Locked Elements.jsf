@@ -1,0 +1,30 @@
+/* ===========================================================================
+	
+	Copy Merged into Selection - Locked Layers.jsf
+
+	Copyright 2012 John Dunning.  All rights reserved.
+	fw@johndunning.com
+	http://johndunning.com/fireworks
+
+   ======================================================================== */
+
+
+// ===========================================================================
+try { (function() {
+		// first store the current script's filename, since if we need to load
+		// the JS file below, the fw.currentScriptFileName gets messed up
+	var filename = fw.currentScriptFileName;
+
+		// load our utilitiy API, if necessary
+	try { jdlib.CopyMerged.handleCopySelection.call; } catch (exception)
+		{ fw.runScript(fw.currentScriptDir + "/Copy Merged Utilities.js"); }
+
+		// handleCopySelection will determine what to do based on this script's filename
+	jdlib.CopyMerged.handleCopySelection(filename);
+})(); } catch (exception) {
+	if (exception.lineNumber) {
+		alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+	} else {
+		throw exception;
+	}
+}

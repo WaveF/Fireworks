@@ -1,0 +1,184 @@
+/* ===========================================================================
+	
+	File: Assign Arrow Keys to Custom Nudge
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 0.4.2 ($Revision: 1.3 $)
+	Last update - $Date: 2010/04/11 23:01:31 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function() 
+{
+		// we use dojo.string.substitute below
+	try { dojo.require.call; } catch (exception)
+		{ fw.runScript(fw.currentScriptDir + "/lib/lib.js"); }
+
+	dojo.require("dojo.string");
+	var substitute = dojo.string.substitute;
+	
+	if (fw.platform == "win") {
+			// figure out the paths to the Keyboard Shortcuts directory in both the
+			// the app and user folders, since we'll need both below.  we need to
+			// navigate to them from known directory paths.
+		var appShortcutsPath = getShortcutsPath(fw.appSettingsDir + "/../");
+		var userShortcutsPath = getShortcutsPath(fw.userJsCommandsDir + "/../");
+	} else {
+			// the shortcut files on the Mac are stored in the language directory,
+			// which is inside the app bundle folder, like "/en.lproj/".  user
+			// files are stored under the user's name, with the short code for
+			// the language as part of the path.
+		var appShortcutsPath = Files.getLanguageDirectory() + "/Keyboard Shortcuts/";
+
+			// clip the ".lproj" part of the language directory and use that to
+			// navigate from the user commands directory to the shortcuts directory
+		var language = Files.getFilename(Files.getLanguageDirectory()).replace(".lproj", "");
+		var userShortcutsPath = fw.userJsCommandsDir + "/../" + language + "/Keyboard Shortcuts/";
+	}
+
+	if (!appShortcutsPath || !userShortcutsPath) {
+		alert('The "Keyboard Shortcuts" folder could not be found, so no shortcuts were created.');
+		return;
+	}
+	
+		// first look for the current shortcuts file in the app directory first
+	var currentShortcutsName = fw.getPref("CurrentShortcutSet");
+	var currentShortcutsPath = appShortcutsPath + currentShortcutsName + ".xml";
+	
+	if (!Files.exists(currentShortcutsPath)) {
+			// it wasn't found, so check the user directory
+		currentShortcutsPath = userShortcutsPath + currentShortcutsName + ".xml";
+		
+		if (!Files.exists(currentShortcutsPath)) {
+			currentShortcutsPath = null;
+		}
+	}
+	
+	if (!currentShortcutsPath) {
+		alert(substitute('The keyboard shortcuts set named "${0}" cannot be found.', 
+			[currentShortcutsName]));
+		return;
+	}
+
+	var newShortcuts = currentShortcutsName + " - Custom Nudge";
+	var newShortcutsPath = userShortcutsPath + newShortcuts + ".xml";
+	
+	if (Files.exists(newShortcutsPath)) {
+		var result = fw.yesNoDialog(substitute('A keyboard shortcuts set named "${0}" already exists. Overwrite it?',
+			[newShortcuts]));
+			
+		if (result) {
+			Files.deleteFile(newShortcutsPath);
+		} else {
+			return;
+		}
+	}
+	
+	Files.createFile(newShortcutsPath, "TEXT", "????");
+	var newFile = Files.open(newShortcutsPath, true);
+	var currentFile = Files.open(currentShortcutsPath, false);
+	var line;
+	
+		// we have to check explicitly for null, since readline will return ""
+		// for a blank line 
+	while ((line = currentFile.readline()) !== null) { 
+		if (line.indexOf("</dynamic_commands>") > -1) {
+				// we want to insert the shortcuts just before the end of the 
+				// <dynamic_commands> section
+			writeShortcuts(newFile);
+		} else if (line.indexOf("<dynamic_commands />") > -1) {
+				// there are no keyboard shortcuts for any commands, so we have
+				// to replace the empty tag with open/close tags
+			newFile.write("<dynamic_commands>");
+			writeShortcuts(newFile);
+
+				// we don't want to write out the empty tag below, so change line
+				// to be a close tag
+			line = "</dynamic_commands>";
+		}
+		
+			// copy the existing line from the old shortcuts file to the new one
+		newFile.write(line + "\n"); 
+	}
+
+	currentFile.close();
+	newFile.close();
+	
+		// this doesn't actually set the pref until the user quits and restarts,
+		// so let the user know
+	fw.setPref("CurrentShortcutSet", newShortcuts);
+	alert(substitute('Now close and relaunch Fireworks to enable the new keyboard shortcuts set.\n\n' + 
+		'Or manually select the "${0}" set in the "Keyboard Shortcuts" dialog.', [newShortcuts]));
+	
+	
+	function getShortcutsPath(
+		inParentPath)
+	{
+		var language = Files.getFilename(Files.getLanguageDirectory()),
+			shortcutsPath = inParentPath + language + "/Keyboard Shortcuts/";
+			
+		if (Files.exists(shortcutsPath)) {
+			return shortcutsPath;
+		} else {
+			return null;
+		}
+	}
+	
+	
+	function writeShortcuts(
+		inFile) 
+	{
+		var k = {
+			ArrowKey_win: {
+				Up: 	38,
+				Left: 	37,
+				Down: 	40,
+				Right: 	39
+			},
+			ArrowKey_mac: {
+				Up:		30,
+				Left: 	28,
+				Bottom:	31,
+				Right: 	29
+			},
+			ModifierKeys: {
+				Small: 	0,
+				Large: 	2
+			},
+			ShortcutTemplate:
+				'\t\t<jscommand name="Custom Nudge - ${size} - ${direction}" count="1" >\n' +
+				'\t\t\t<shortcut text="${modifierKeys} ${arrowKey}" />\n' +
+				'\t\t</jscommand>\n'
+		};
+
+			// the values for arrow keys are different on Mac vs. Windows
+		var arrowKey = k["ArrowKey_" + fw.platform];
+
+		for (var direction in { Up:1, Left:1, Down:1, Right:1 }) {
+			for (var size in { Small:1, Large:1 }) {
+				var shortcut = substitute(k.ShortcutTemplate, {
+					direction: direction,
+					size: size,
+					modifierKeys: k.ModifierKeys[size],
+						arrowKey: arrowKey[direction]
+				});
+				inFile.write(shortcut);
+			}
+		}
+	}
+})();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

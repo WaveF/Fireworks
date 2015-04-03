@@ -1,0 +1,122 @@
+/* ===========================================================================
+	
+	File: Import Files into Pages
+
+	Author - John Dunning
+	Copyright - 2007 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 0.2.0 ($Revision: 1.2 $)
+	Last update - $Date: 2008/10/07 08:55:20 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function()
+{
+		// let the user pick up to 100 png files to import
+	var files = fw.locateDocDialog(100, ["PNG", "kMoaCfFormat_JPEG", 
+			"kMoaCfFormat_GIF", "kMoaCfFormat_BMP", "kMoaCfFormat_PICT", 
+			"kMoaCfFormat_TIFF", "PS30", "ADOBE AI3", "kMoaCfFormat_FreeHand7and8"]);
+	
+	if (!files) {
+			// the user canceled
+		return;
+	}
+
+		// locateDocDialog doesn't give us a proper JS array, so turn it into one
+		// so we can sort the file paths (which come in reverse of the order
+		// the user selected them)
+	files = [].concat(files);
+	
+		// do a case-insensitive sort
+	files.sort(
+		function(inA, inB) 
+		{
+			inA = inA.toLowerCase(); 
+			inB = inB.toLowerCase();
+			
+			if (inA == inB) {
+				return 0;
+			} else if (inA < inB) {  
+				return -1;
+			} else {
+				return 1;
+			}
+		}
+	);
+		
+		// create a new doc to import the pages into 
+	fw.createDocument();
+	var dom	= fw.getDocumentDOM();
+
+	for (var i = 0, len = files.length; i < len; i++) {
+		var filePath = files[i];
+		var filename = Files.getFilename(filePath);
+		filename = filename.substring(0, filename.lastIndexOf("."));
+		
+		if (i > 0) {
+				// we want to reuse the existing first page
+			dom.addNewPage();
+		}
+
+		dom	= fw.getDocumentDOM();
+		dom.setPageName(i, filename);
+
+			// import the file at its natural size, without any scaling.  we'll
+			// fix up the page size in the next loop.
+		dom.importFile(filePath, { left: 0, top: 0, right: 0, bottom: 0 }, true);
+		dom.selectNone();
+	}
+
+		// now loop through each file again to get its canvas size.  doing this
+		// in the same loop as creating the pages and importing the files 
+		// just doesn't work.
+	for (var i = 0, len = files.length; i < len; i++) {
+		var filePath = files[i];
+		
+			// open the file we imported in the previous loop but don't show it.
+		var importedDom = fw.openDocument(filePath, false, true);
+		var width = importedDom.width;
+		var height = importedDom.height;
+		var layerCount = importedDom.layers.length;
+		fw.closeDocument(importedDom, false);
+
+		dom.changeCurrentPage(i);
+		
+			// doing this causes an error.  'cause, yeah, it's not like anyone 
+			// would want to access the current DOM or anything.  ffs
+//		dom = fw.getDocumentDOM();
+
+			// set the page to the same canvas size as the imported file
+		dom.setDocumentCanvasSize({ left: 0, top: 0, right: width, bottom: height }, true);
+		
+			// for some reason, this seems to select all, so deselect everything
+		dom.selectNone();
+		
+//alert([i, dom.currentPageNum, dom.pageName, dom.layers.length, layerCount]);
+// this check doesn't work because dom.layers.length doesn't seem to have updated
+// it seems to still be stuck on the previous page, and calling fw.getDocumentDOM() 
+// just gives a freaking negative error code.  error -2147221484, how I hate you.
+/*
+		if (dom.layers.length > layerCount) {
+				// there's the extra default "Layer 1" at the bottom of the stack, so remove it
+			dom.deleteLayer(0);
+		}
+*/
+	}
+	
+	dom.changeCurrentPage(0);
+}
+)();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

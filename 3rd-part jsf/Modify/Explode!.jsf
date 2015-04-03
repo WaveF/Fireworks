@@ -1,0 +1,113 @@
+// Fireworks JavaScript Command
+// Install by copying to Fireworks/Configuration/Commands/
+// Run in Fireworks via the Commands menu
+// Aaron Beall - http://abeall.com
+// Version 1.1
+
+var dom = fw.selection ? fw.getDocumentDOM() : false; // document object
+var sel = new Array().concat(fw.selection);
+
+function Explode() {
+	// require selection
+	if (!sel.length) return false;
+	if (sel.length < 2) return alert('You must select more than one object to explode.');
+	
+	// input
+	var input = null, errors = null;
+	do{
+		if(errors) alert(errors);
+		input = prompt('Parameters:\nStrength(1-999), Origin(center, top left, top, top right, right, bottom right, bottom, bottom left, left, x:y), Chaos(0-100)', input||fw.Explode_input||'100, center, 15');
+		errors = validateInput(input);
+	}while(errors != null);
+	function validateInput(str){
+		if(str == null) return null;
+		str = str.split(' ').join('').split(',');
+		if(str.length != 3) return 'Invalid input.';
+		if(isNaN(Number(str[0])) || isNaN(Number(str[2]))) return 'Invalid input; use only numbers for Strength and Chaos.';
+		if(str[1].indexOf(':') != -1){
+			var s = str[1].toLowerCase().split(':');
+			if(s.length != 2) return 'Invalid input; did not understand "' + str[1] + '" as Origin parameter.'
+			if(isNaN(Number(s[0])) || isNaN(Number(s[1]))) return 'Invalid input; use only numbers when specifying precise Origin coordinates.';
+		}else{
+			var s = str[1];
+			var o = ['center', 'topleft', 'top', 'topright', 'right', 'bottomright', 'bottom', 'bottomleft', 'left'];
+			for(var i in o)	if(s == o[i]) return null;
+			return 'Invalid input; "' + s + '" is not a recognized Origin parameter.';
+		}
+		return null;
+	}
+	
+	// evaluate input
+	if(input == null) return false;
+	fw.Explode_input = input;
+	input = input.split(' ').join('').split(',');
+	var strength = Math.max(0, Math.min(999, Number(input[0])));
+	var chaos = Math.max(0, Math.min(1, Number(input[2]) / 100));
+	var origin = new Object();
+	var bounds = dom.getSelectionBounds();
+	if(input[1].indexOf(':') != -1){
+		origin.x = Number(input[1].split(':')[0]);
+		origin.y = Number(input[1].split(':')[1]);
+	}else{
+		switch(input[1].toLowerCase()){
+			case 'top':
+				origin = {x:bounds.left + (bounds.right - bounds.left) * .5,y:bounds.top}; break;
+			case 'topright':
+				origin = {x:bounds.right, y:bounds.top}; break;
+			case 'right':
+				origin = {x:bounds.right, y:bounds.top + (bounds.bottom - bounds.top) * .5}; break;
+			case 'bottomright':
+				origin = {x:bounds.right, y:bounds.bottom}; break;
+			case 'bottom':
+				origin = {x:bounds.left + (bounds.right - bounds.left) * .5, y:bounds.bottom}; break;
+			case 'bottomleft':
+				origin = {x:bounds.left, y:bounds.bottom}; break;
+			case 'left':
+				origin = {x:bounds.left, y:bounds.top + (bounds.bottom - bounds.top) * .5}; 
+				break;
+			case 'topleft':
+				origin = {x:bounds.left, y:bounds.top}; break;
+			default: //case 'center':
+				origin = {x:bounds.left + (bounds.right - bounds.left) * .5, y:bounds.top + (bounds.bottom - bounds.top)* .5}; break;
+		}
+	}
+	//alert(strength);
+	//alert(chaos);
+	//alert(origin.x);
+	//alert(origin.y);
+	
+	// explode!
+	var s = sel.length;
+	while(s--){
+		fw.selection = new Array(sel[s]);
+		var bounds = dom.getSelectionBounds();
+		var objCenter = {x:bounds.left + (bounds.right - bounds.left) * .5 , y:bounds.top + (bounds.bottom - bounds.top) * .5};
+		var angleChaos = 90 * chaos;
+		var angle = getAngle(objCenter, origin) + (-angleChaos + (Math.random() * angleChaos) * 2);
+		var velocityChaos = strength * chaos;
+		var trajectory = getTrajectory(strength + (-velocityChaos + (Math.random() * velocityChaos) * 2), angle);
+		dom.moveSelectionBy({x:Math.round(trajectory.x), y:Math.round(trajectory.y)}, false, false);
+		//dom.moveSelectionTo({x:sel[s].left+trajectory.x,y:sel[s].top+trajectory.y},false,false);
+		if(angleChaos != 0) dom.rotateSelection(Math.round(-angleChaos + (angleChaos * Math.random()) * 2), 'transformAttributes');
+		//dom.addNewLine(origin, objCenter);
+		//dom.addNewLine(objCenter, {x:objCenter.x + trajectory.x, y:objCenter.y + trajectory.y});
+		sel[s] = fw.selection[0];
+	}
+	fw.selection = sel;
+	dom.group();
+	dom.applyEffects({ category:"UNUSED", effects:[ { EffectIsVisible:true, EffectMoaID:"{94dbd663-9b2e-44bf-8064ab6efdd2d327}", MB_filter_preview_tile_size:"-1 -1", category:"Blur", name:"Zoom Blur...", zoom_blur_amount:10, zoom_blur_quality:100 } ], name:"UNUSED" });
+}
+
+Explode();
+
+//Calculates angle between two points
+function getAngle(p1, p2){
+	return Math.atan2((p1.x - p2.x), (p1.y - p2.y)) * (180 / Math.PI);
+}
+
+//Calculates trajectory
+function getTrajectory(velocity,angle){
+	var xS = velocity * Math.sin(angle * (Math.PI / 180));
+	var yS = velocity * Math.cos(angle * (Math.PI / 180));
+	return {x:xS, y:yS};
+}

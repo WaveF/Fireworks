@@ -1,0 +1,50 @@
+// Fireworks JavaScript Command
+// Copy to Fireworks/Configuration/Commands/
+// 2007 Aaron Beall - http://fireworks.abeall.com
+// Version 1.0
+// Requires CS3+
+
+/* TODO:
+- convert frame-shared layers to page-shared layers
+*/
+
+var dom = fw.selection ? fw.getDocumentDOM() : false; // document object
+var sel = fw.selection ? new Array().concat(fw.selection) : new Array(); // saved selection
+
+function DistributeFramesToPages() {
+	// require active document
+	if(!dom) return false;
+	
+	// require more than one frame on current page
+	if(dom.frames.length==1) return alert('The current '+(dom.pagesCount>1?'page':'document')+' only has 1 frame; the command produced no output.');
+	
+	// duplicate current page for each frame, and trim duplicate page to only the one current frame
+	var frames = dom.frames.length, pageCount = dom.pagesCount, pageNum = dom.currentPageNum, name;
+	for(var f=1; f<frames; f++){
+		dom.changeCurrentPage(pageNum);
+		name = dom.frames[f].name;
+		dom.duplicatePage(pageNum);
+		dom.changeCurrentPage(pageCount-1+f);
+		dom.setPageName(pageCount-1+f, name);
+		//dom = fw.getDocumentDOM();
+		if(f<frames-1)
+			dom.deleteFrames(f+1,frames-(f+1));
+		dom.deleteFrames(0,f);
+	}
+	
+	// name the current page, and delete the frames which were just distributed
+	dom.changeCurrentPage(pageNum);
+	dom.setPageName(pageNum, dom.frames[0].name);
+	dom.deleteFrames(1,frames-1);
+	
+	// finally, if there was more than one page in the original document, 
+	// move all the duplicate pages so they appear after the original page(otherwise they'd be tacked on the end of the document)
+	if(pageCount>1){
+		for(var f=1; f<frames; f++){
+			dom.reorderPages(dom.pagesCount-1, pageNum+1);
+		}
+	}
+	return true;
+}
+
+DistributeFramesToPages();

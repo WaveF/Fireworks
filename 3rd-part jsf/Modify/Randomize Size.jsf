@@ -1,0 +1,64 @@
+/*
+Fireworks CS5 JavaScript Command
+Randomizes the size of selected elements
+Install by copying to Fireworks/Configuration/Commands/
+Aaron Beall 2011 - http://abeall.com
+Version 1.0
+*/
+
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+function RandomizeSize() {
+	
+	// Require active document
+	if(!fw.documents.length)
+		return false;
+	
+	// Require selection
+	if(!sel.length)
+		return alert("Unable to randomize; please select some objects.");
+	
+	// User input
+	var input, xscale, yscale, proportional;
+	do{
+		input = prompt("Enter amount of x,y size randomization, in percent (a single value will scale proportionally): ", fw.RandomizeSize_input || "100,100");
+		if(!input)
+			return;
+	}while(!validate());
+	function validate(){
+		var args = String(input).split(",");
+		xscale = Number(args[0]);
+		yscale = Number(args.length > 1 ? args[1] : args[0]);
+		proportional = args.length == 1;
+		if(isNaN(xscale) || isNaN(yscale))
+			return alert("Invalid input; enter numbers only.");
+		return true;
+	}
+	
+	// Analyze input
+	xscale = Math.min(Math.max(0, xscale), 100);
+	yscale = Math.min(Math.max(0, yscale), 100);
+	fw.RandomizeSize_input = proportional ? xscale : [xscale, yscale].join(",");
+	
+	// Apply random scale to elements
+	var s = sel.length;
+	while(s--){
+		var elem = sel[s];
+		fw.selection = [elem];
+		var xrand = 1 - (Math.random() * xscale) / 100;
+		var yrand = proportional ? xrand : 1 - (Math.random() * yscale) / 100;
+		dom.scaleSelection(xrand, yrand, "autoTrimImages transformAttributes");
+		sel[s] = fw.selection[0];
+	}
+	
+	// Restore selection
+	fw.selection = sel;
+	
+	// Command success
+	return true;
+}
+
+try{
+RandomizeSize();
+}catch(e){alert([e.lineNumber, ":", e, e.fileName])};

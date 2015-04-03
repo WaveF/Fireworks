@@ -1,0 +1,94 @@
+/* ===========================================================================
+	
+	Paste Multi-Border Attributes.jsf
+
+	Copyright 2013 John Dunning.  All rights reserved.
+	fw@johndunning.com
+	http://johndunning.com/fireworks
+
+   ======================================================================== */
+
+
+// ===========================================================================
+try { (function() {
+	function copyObject(
+		inObject)
+	{
+		if (typeof inObject == "object" && inObject !== null) {
+			return eval("(" + inObject.toSource() + ")");
+		} else {
+			return inObject;
+		}
+	}
+	
+	
+	if (!fw.selection || !fw.selection.length) {
+		return;
+	}
+	
+	var dom = fw.getDocumentDOM(),
+		originalSelection = [].concat(fw.selection),
+		sourceElement,
+		properties,
+		effects,
+		opacity,
+		blendMode;
+		
+	dom.clipPaste();
+	sourceElement = fw.selection[0];
+	
+	if (fw.selection.length == 1 && sourceElement.customData.MultiBorder) {
+			// copy the MultiBorder and other properties from the pasted auto shape 
+		properties = copyObject(sourceElement.customData.MultiBorder);
+		effects = copyObject(sourceElement.effectList);
+		opacity = sourceElement.opacity;
+		blendMode = sourceElement.blendMode
+	}
+
+		// get rid of the pasted auto shape
+	dom.deleteSelection(false, false);
+
+	for (var i = 0, len = originalSelection.length; i < len; i++) {
+		var element = originalSelection[i];
+		
+		if (properties && element.customData.MultiBorder) {
+			var elementProperties = element.customData.MultiBorder,
+					// make a copy of the pasted properties so that we can set
+					// the color and width sub-objects below without them 
+					// pointing to the ones contained in the source properties
+				propertiesCopy = copyObject(properties);
+				
+			elementProperties.color = propertiesCopy.color;
+			elementProperties.fillColor = propertiesCopy.fillColor;
+			elementProperties.initialWidth = propertiesCopy.initialWidth;
+			elementProperties.width = propertiesCopy.width;
+
+				// apply other properties of the source element before calling
+				// redrawSmartShape, which kills the element reference
+			element.effectList = copyObject(effects);
+			element.opacity = opacity;
+			element.blendMode = blendMode;
+
+				// dom.redrawSmartShape() doesn't seem to work if more than one
+				// element is selected, so we have to redraw each one
+			fw.selection = [element];
+			dom.redrawSmartShape();
+		} else {
+				// this is a regular element or we didn't find a MultiBorder on
+				// the clipboard, so just do a regular paste attributes
+			fw.selection = [element];
+			dom.clipPasteAttributes();
+		}
+		
+			// refresh the reference in originalSelection
+		originalSelection[i] = fw.selection[0];
+	}
+
+	fw.selection = originalSelection
+})(); } catch (exception) {
+	if (exception.lineNumber) {
+		alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+	} else {
+		throw exception;
+	}
+}

@@ -1,6 +1,0 @@
-﻿var sel = fw.selection;
-var copies = prompt("请输入复制次数：", "10");
-
-for(var i=0; i<copies; i++){
-	fw.getDocumentDOM().cloneSelection();
-}

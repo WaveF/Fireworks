@@ -1,0 +1,37 @@
+/* ===========================================================================
+	
+	File: Duplicate
+
+	Author - John Dunning
+	Copyright - 2007 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Version - 0.1.0
+	Last update - 1/17/2007 1:53 PM
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+(function()
+{
+	if (fw.documents.length == 0) {
+		return;
+	}
+
+	var dom	= fw.getDocumentDOM();
+	
+	var pageName = dom.pageName;
+	var pageIndex = dom.currentPageNum;
+	
+		// duplicate the current page, put the duplicate right after the current
+		// page and give it the same name
+	dom.duplicatePage(pageIndex);
+	dom.setPageName(dom.pagesCount - 1, pageName);
+	dom.reorderPages(dom.pagesCount - 1, pageIndex);
+	dom.changeCurrentPage(pageIndex + 1);
+})();

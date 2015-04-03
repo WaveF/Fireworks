@@ -1,0 +1,51 @@
+/* ===========================================================================
+	
+	File: Fake Underline - Set Offset
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 0.1.1 ($Revision: 1.2 $)
+	Last update - $Date: 2009/02/23 01:24:47 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+(function()
+{
+		// save off the currentScriptDir, since loading dojo will mess it up,
+		// and we need to run another script from the same dir below 
+	var currentDir = fw.currentScriptDir;
+	
+	if (typeof dojo == "undefined") { fw.runScript(fw.currentScriptDir + "/lib/lib.js"); }
+	dojo.require("fwlib.util.pngText");
+	
+	var underlinePrefs = fwlib.util.getPngTextData(
+		"jdlib.FakeUnderline",
+		{
+			lineOffset: 2,
+			pathAttributes: null
+		}
+	);
+	
+	var lineOffset = prompt("Enter the vertical offset of the underline from the bottom of the text block, in pixels:", 
+			underlinePrefs.lineOffset);
+	
+	if (!lineOffset) {
+		return;
+	}
+	
+	underlinePrefs.lineOffset = parseInt(lineOffset);
+	fwlib.util.setPngTextData("jdlib.FakeUnderline", underlinePrefs);
+	
+		// apply the new offset to the current selection, if any
+	if (fw.selection.length) {
+		fw.runScript(currentDir + "/Fake Underline - Add.jsf");
+	}
+})()

@@ -1,0 +1,133 @@
+/* ===========================================================================
+	
+	Group Attributes - Copy.jsf
+
+	Copyright 2012 John Dunning.  All rights reserved.
+	fw@johndunning.com
+	http://johndunning.com/fireworks
+
+   ======================================================================== */
+
+
+// ===========================================================================
+try { (function() {
+	jdlib = jdlib || {};
+
+		// we want to store these attributes of all elements 
+	var kUniversalAttributeNames = ["left", "top", "opacity", "blendMode", "effectList"];
+	
+		// there doesn't seem to be a way to set textureOffset via the dom
+	var kStyleAttributeNames = {
+		Group: kUniversalAttributeNames,
+		RectanglePrimitive: kUniversalAttributeNames.concat(["pathAttributes", "roundness"]),
+		Path: kUniversalAttributeNames.concat(["pathAttributes"]),
+		Text: kUniversalAttributeNames.concat(["pathAttributes", "antiAliased", "antiAliasMode", "autoKern", "orientation", "transformMode"])
+	};
+
+	if (fw.documents.length < 1) {
+			// no documents are open
+		return;
+	}
+
+	if (fw.selection.length < 1) {
+			// nothing's selected
+		return;
+	}
+
+		// record the attributes of all of the objects in the first selected element
+		// and store it in a global so Group Attributes - Paste can access it
+	jdlib.gCurrentObjectStyles = getObjectStyles(fw.selection[0]);
+
+		// select the object we copied the attributes from, in case more than
+		// one was selected
+	fw.selection = [fw.selection[0]];
+	
+
+	// =======================================================================
+	/*
+		If the group is structured like this:
+			GroupElement
+				1
+					1.1
+						1.1.1
+						1.1.2
+					1.2
+				2
+					2.1
+					2.2
+	
+		Then the styles are stored in the array like this:
+			[ 1.1.1, 1.1.2, 1.1, 1.2, 1, 2.1, 2.2, 2, GroupElement ]
+	*/
+	function getObjectStyles(
+		inObject)
+	{
+		if (!inObject) {
+			return [];
+		}
+	
+		var objectStyles = [];
+	
+		if (inObject.elements) {
+				// this element is a group, so recurse over all of its children
+			for (var i = 0; i < inObject.elements.length; i++) {
+					// each recursive call will add to the length of objectStyles
+				objectStyles = objectStyles.concat(getObjectStyles(inObject.elements[i]));
+			}
+		}
+	
+			// record this object's type so we can make sure the group we apply the
+			// attributes to later has the same structure as 
+		var objectStyle = {
+			type: getObjectType(inObject)
+		};
+	
+			// copy certain attributes from the object into the objectStyle, depending
+			// on the object's type
+		if (kStyleAttributeNames[objectStyle.type]) {
+			var attributeNames = kStyleAttributeNames[objectStyle.type];
+	
+			for (var i = 0; i < attributeNames.length; i++) {
+				objectStyle[attributeNames[i]] = inObject[attributeNames[i]];
+			}
+		}
+	
+			// we have to handle Text elements specially because we need to dig into
+			// their textRuns to get the initialAttrs property
+		if (objectStyle.type == "Text") {
+			objectStyle.initialAttrs = inObject.textRuns.initialAttrs;
+		}
+	
+			// add this object's attributes to the growing list
+		objectStyles.push(objectStyle);
+	
+		return objectStyles;
+	}
+	
+
+	// =======================================================================
+	function getObjectType(
+		inObject)
+	{
+		if (!inObject) {
+			return "";
+		}
+	
+			// toString() returns a string of the form "[object <type>]"
+		var objectString = inObject.toString();
+	
+		if (objectString.indexOf("[object ") != 0) {
+				// this appears to not be a Fireworks object
+			return "";
+		} else {
+				// return the object name, not the [object ] part
+			return objectString.slice(8, -1);
+		}
+	}
+})(); } catch (exception) {
+	if (exception.lineNumber) {
+		alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+	} else {
+		throw exception;
+	}
+}

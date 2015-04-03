@@ -1,0 +1,80 @@
+/*
+Fireworks CS5 JavaScript Command
+Randomizes the coloration of selected elements via live filters
+Install by copying to Fireworks/Configuration/Commands/
+Aaron Beall 2011 - http://abeall.com
+Version 1.1
+*/
+
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+function RandomizeColor() {
+	
+	// Require active document
+	if(!fw.documents.length)
+		return false;
+	
+	// Require selection
+	if(!sel.length)
+		return alert("Unable to randomize; please select some objects.");
+	
+	// User input
+	var input = null, hue, sat, lit;
+	do{
+		input = prompt("Enter amount of color randomization: Hue(0-180), Saturation(0-100), Lightness(0-100)", fw.RandomizeColor_input || "180, 100, 100");
+		if(!input)
+			return;
+	}while(!validate());
+	function validate(){
+		var args = String(input).split(",");
+		hue = Number(args[0]);
+		sat = Number(args[1] || 0);
+		lit = Number(args[2] || 0);
+		if(isNaN(hue) || isNaN(sat) || isNaN(lit))
+			return alert("Invalid input; enter numbers only.");
+		return true;
+	}
+	
+	// Analyze input
+	hue = Math.min(Math.abs(hue), 180);
+	sat = Math.min(Math.abs(sat), 100);
+	lit = Math.min(Math.abs(lit), 100);
+	fw.RandomizeColor_input = [hue, sat, lit].join(",");
+	
+	// Apply randomized hue/sat/lit filter to elements
+	var HUE_SAT_MOA_ID = "{3439b08d-1922-11d3-9bde00e02910d580}";
+	var s = sel.length;
+	while(s--){
+		var elem = sel[s];
+		var effects = copyEffects(elem);
+		var effect = effects[effects.length - 1];
+		if(!effect || effect.EffectMoaID != HUE_SAT_MOA_ID){
+			effect = { EffectIsVisible:true, EffectMoaID:HUE_SAT_MOA_ID, MB_filter_preview_tile_size:"-1 -1", category:"Adjust Color", hls_colorize:false, hue_amount:0, lightness_amount:0, name:"Hue/Saturation...", saturation_amount:0 };
+			effects.push(effect);
+		}
+		effect.hue_amount = -hue + hue * 2 * Math.random();
+		while(effect.hue_amount < -180)
+			effect.hue_amount += 360;
+		while(effect.hue_amount > 180)
+			effect.hue_amount -= 360;
+		effect.saturation_amount += -sat + sat * 2 * Math.random();
+		effect.lightness_amount += -lit + lit * 2 * Math.random();
+		fw.selection = [elem];
+		dom.applyEffects({ category:"UNUSED", effects:effects, name:"UNUSED" });
+	}
+	
+	// Restore selection
+	fw.selection = sel;
+	
+	// Command success
+	return true;
+}
+
+try{
+RandomizeColor();
+}catch(e){alert([e.lineNumber, ":", e, e.fileName])};
+
+function copyEffects(elem){
+	return elem.effectList ? eval("(" + elem.effectList.effects.toSource() + ")") : [];
+}

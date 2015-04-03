@@ -1,0 +1,28 @@
+/*
+miniCG.com
+by WaveF
+Launch extension folder v1.0 Fireworks commands for Brackets
+
+* INSTALLATION:
+  copying this file to
+
+  Windows:
+  C:\Program Files (x86)\Adobe\Adobe Fireworks CS5\Configuration\Commands
+
+  OSX:
+  /Applications/Adobe Fireworks CS5/Configuration/Commands
+
+* RUN
+  access the command through Commands > Brackets > Launch extension folder
+
+* MANAGE COMMANDS
+  use 'Manage Saved Commands...' from Commands menu to delete existing commands
+
+*/
+
+(function(){
+	var sysFolder = (fw.appPrefsDir).replace('/Adobe/Fireworks%20CS6','');
+	var bracketsPath = sysFolder + '/Brackets/extensions/user';
+	
+	fw.launchBrowserTo(bracketsPath);
+})();

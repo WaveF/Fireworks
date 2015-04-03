@@ -1,0 +1,22 @@
+/* ===========================================================================
+
+	Insert.jsf
+
+	Copyright (c) 2013 John Dunning.  All rights reserved.
+	fw@johndunning.com
+	http://johndunning.com/fireworks
+
+   ======================================================================== */
+
+
+// ===========================================================================
+if (typeof require != "function" || !require.version) {
+	fw.runScript(fw.currentScriptDir + "/lib/fwrequire.js"); }
+
+require([
+	"svg/svg-file"
+], function(
+	svgFile
+) {
+	svgFile.insert();
+});

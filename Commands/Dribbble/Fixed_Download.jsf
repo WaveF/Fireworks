@@ -1,0 +1,20 @@
+var sp = '\n';
+
+var batFilePath = fw.currentScriptDir + "/temp.bat";
+	Files.deleteFileIfExisting(batFilePath);
+	Files.createFile(batFilePath, "TEXT", "????");
+
+var batFile = Files.open(batFilePath, true);
+var TextStream = [];
+	TextStream[0] = '@echo off&mode con cols=15 lines=1';
+	TextStream[1] = 'd:';
+	TextStream[2] = 'cd "D:\\Program Files\\Adobe\\Adobe Fireworks CS6\\Configuration\\Commands\\FWXHR"';
+	TextStream[3] = 'start /min /w wget -b http://www.baidu.com/img/bd_logo1.png -O bd.png -o wget.log -q';
+	TextStream[4] = 'del /Q temp.bat';
+
+var batFileText = TextStream.join(sp);
+	batFile.write(batFileText);
+	batFile.close();
+
+fw.launchApp(batFilePath, []);
+Files.deleteFileIfExisting(fw.currentScriptDir+"wget.log");

@@ -1,0 +1,4 @@
+if( fw.documents.length > 0 )
+{
+	fw.getDocumentDOM().setUseAGMRenderingForSelection(true);
+}

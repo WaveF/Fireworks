@@ -1,0 +1,36 @@
+// Fireworks JavaScript Command
+// Flattens each selected element to its own Bitmap -- useful for converting a bunch of source graphics to flattened versions for deployment
+// Install by copying to Fireworks/Configuration/Commands/
+// Aaron Beall - http://abeall.com
+// Version 1.1
+
+var dom = fw.getDocumentDOM(); // document object
+var sel = [].concat(fw.selection); // saved selection
+
+function FlattenElements() {
+	
+	// validate selection
+	if(!fw.selection.length)
+		return alert("Unable to flatten; no elements selected. Select multiple elements to flatten each to its own Bitmap.");
+	
+	// command script:
+	
+	var newSel = [];
+	
+	var s = sel.length;
+	while(s--){
+		fw.selection = [sel[s]];
+		var name = sel[s].name;
+		dom.flattenSelection();
+		if(name)
+			fw.selection[0].name = name + " (Flattened)";
+		newSel.push(fw.selection[0]);
+	}
+	
+	fw.selection = newSel;
+	
+	// command successful
+	return true;
+}
+
+FlattenElements();

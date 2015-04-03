@@ -1,0 +1,51 @@
+/*
+Fireworks CS5 JavaScript Command
+Randomizes the position of selected elements within selection bounds
+Install by copying to Fireworks/Configuration/Commands/
+Aaron Beall 2011 - http://abeall.com
+Version 1.0
+*/
+
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+function RandomizePosition() {
+	
+	// Require active document
+	if(!fw.documents.length)
+		return false;
+	
+	// Require selection
+	if(!sel.length)
+		return alert("Unable to randomize; please select some objects.");
+	
+	// Require more than one element
+	if(sel.length = 1)
+		return alert("This operation produced no change; you need to select more than one object and their positions will be randomized within your selection bounds.");
+	
+	// User selection bounds for randomization area
+	var bounds = dom.getSelectionBounds();
+	bounds.width = bounds.right - bounds.left;
+	bounds.height = bounds.bottom - bounds.top;
+	
+	// Move elements to random positions in bounds
+	for(var s = 0; s < sel.length; s++){
+		var elem = sel[s];
+		fw.selection = [elem];
+		var xrand = bounds.left + Math.round((bounds.width - elem.width) * Math.random());
+		var yrand = bounds.top + Math.round((bounds.height - elem.height) * Math.random());
+		if(xrand !=0 || yrand != 0)
+			dom.moveSelectionTo({x:xrand, y:yrand}, false, false);
+		sel[s] = fw.selection[0];
+	}
+	
+	// Restore selection
+	fw.selection = sel;
+	
+	// Command success
+	return true;
+}
+
+try{
+RandomizePosition();
+}catch(e){alert([e.lineNumber, ":", e, e.fileName])};

@@ -1,0 +1,35 @@
+// version 2
+var dom = fw.getDocumentDOM();
+function ExtractPattern() {
+	if (!fw.selection || !fw.selection.length) {
+		return alert("Invalid document or selection.");
+	}
+	var attrs = fw.selection[0].pathAttributes;
+	if (!attrs || !attrs.fill || !attrs.fill.pattern) {
+		return alert("Could not detect a pattern within the selection.");
+	}
+	var fill = eval("(" + attrs.fill.toSource() + ")");
+	fill.textureBlend = 0;
+	fill.feather = 0;
+	
+	dom.addNewRectanglePrimitive({left:0, top:0, right:100, bottom:100}, 0);
+	dom.setFill(fill);
+	dom.setDefaultFillVector();
+	attrs = fw.selection[0].pathAttributes;
+	dom.setRectSides({left:attrs.fillHandle3.x, top:attrs.fillHandle3.y, right:attrs.fillHandle2.x, bottom:attrs.fillHandle2.y});
+	dom.flattenSelection();
+	dom.clipCut();
+	
+	fw.createFireworksDocument({x:100, y:100}, {pixelsPerUnit:72, units:"inch"}, "#00000000");
+	dom = fw.getDocumentDOM();
+	dom.clipPaste("do not resample", "vector");
+	dom.setDocumentCanvasSizeToDocumentExtents(true);
+	
+	//dom.setExportOptions({animAutoCrop:true, animAutoDifference:true, applyScale:false, colorMode:"32 bit", crop:false, cropBottom:0, cropLeft:0, cropRight:0, cropTop:0, ditherMode:"none", ditherPercent:100, exportFormat:"PNG", frameInfo:[], interlacedGIF:false, jpegQuality:100, jpegSelPreserveButtons:false, jpegSelPreserveText:true, jpegSelQuality:100, jpegSelQualityEnabled:false, jpegSmoothness:0, jpegSubsampling:0, localAdaptive:true, lossyGifAmount:0, macCreator:"", macFileType:"", name:null, numCustomEntries:0, numEntriesRequested:0, numGridEntries:6, optimized:true, paletteEntries:null, paletteInfo:null, paletteMode:"adaptive", paletteTransparency:"none", percentScale:100, progressiveJPEG:false, savedAnimationRepeat:0, sorting:"none", useScale:true, webSnapAdaptive:false, webSnapTolerance:14, xSize:0, ySize:0});
+	//fw.exportDocumentAs(newDom, null, null)
+	//fw.closeDocument(newDom,false);
+}
+
+//try { 
+ExtractPattern(); 
+//}catch(err){ alert([e.lineNumber, e, e.fileName]); }

@@ -1,0 +1,16 @@
+// Fireworks JavaScript Command
+// Paste clipboard to a new document
+// Install by copying to Fireworks/Configuration/Commands/
+// Run in Fireworks via the Commands menu
+// Aaron Beall 2009 - http://abeall.com
+// Version 1.0
+
+
+function PasteAsNewDocument() {
+	fw.createDocument();
+	var dom = fw.getDocumentDOM();
+	dom.clipPaste("do not resample","image");
+	dom.setDocumentCanvasSizeToDocumentExtents(true);
+}
+
+PasteAsNewDocument();

@@ -1,0 +1,63 @@
+// Copyright (c) 1999 Macromedia. All rights reserved.
+
+var pixel = fw.getDocumentDOM().getPixelMask();
+
+// Figure out if there is a selection that the user made
+if (pixel == null){
+
+	var currentSel = fw.selection;
+	if (currentSel == null || currentSel.length == 0)
+		fw.getDocumentDOM().selectAll();
+	currentSel = fw.selection;                               //Save the current selection in an array
+	// Now run the filters;	
+	
+	var obj = new Object();												// The effect to be applied.
+		obj.EffectIsVisible=true;
+		obj.EffectMoaID="{3439b08d-1922-11d3-9bde00e02910d580}";
+		obj.MB_filter_preview_tile_size="-1 -1";
+		obj.category="Adjust Color";
+		obj.hls_colorize=true;
+		obj.hue_amount=27;
+		obj.lightness_amount=0;
+		obj.name="Hue/Saturation...";
+		obj.saturation_amount=20;
+				
+	for( var count = 0; count < currentSel.length; count++)           
+	{
+		var effectsArray = new Array();	                               
+		fw.selection = [currentSel[count]];                        //Now select each element, store the already applied effects in an array,
+		if(fw.selection[0].effectList != null)                     // add the required effect to it and apply effect.  
+		{
+			effectsArray = fw.selection[0].effectList.effects;
+		}
+		effectsArray[effectsArray.length] =  obj;
+		fw.getDocumentDOM().applyEffects(
+			{ 
+				category:"Untitled",
+				effects:effectsArray,
+				name:"Untitled" 
+			}
+		);
+		
+	}
+} else{
+	// Run the filters on the user selected pixels
+	fw.getDocumentDOM().filterSelection(
+		{ 
+			EffectMoaID:"{3439b08d-1922-11d3-9bde00e02910d580}",
+			hls_colorize:true,
+			hue_amount:0,
+			lightness_amount:0,
+			saturation_amount:0 
+		}
+	);
+	fw.getDocumentDOM().filterSelection(
+		{ 
+			EffectMoaID:"{3439b08d-1922-11d3-9bde00e02910d580}",
+			hls_colorize:true,
+			hue_amount:30,
+			lightness_amount:0,
+			saturation_amount:20 
+		}
+	);
+}
