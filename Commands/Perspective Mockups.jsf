@@ -1,0 +1,247 @@
+var dom = fw.getDocumentDOM();
+var sel = fw.selection;
+var angle = 45;
+var LR = -1;
+
+if (typeof require != "function" || !require.version) {fw.runScript(fw.currentScriptDir + "/lib/fwrequire.js"); } require(["fwlib/dialog"], function(dialog){
+	if (!sel || sel.length == 0) {
+		alert('Please select something first!');
+		return;
+	}
+	
+	
+	var jsml = {
+		title: "Perspective Mockups",
+		showTitle: false,
+		confirmButton: "OKBtn",
+		//dismissButton: "CancelBtn",
+		size: "225x225",
+		css: {
+			".Row": {
+				paddingLeft: 3,
+				paddingRight: 3,
+				paddingTop: 0,
+				horizontalGap: 0,
+				horizontalAlign: "left",
+				verticalAlign: "middle",
+			}
+		},
+		children: [
+			createHeader("Direction"),
+			{ VBox: {
+				percentWidth: 100,
+				style: {
+					horizontalAlign: "center",
+				},
+				children: [
+					{ RadioButton: {
+						percentWidth: 100,
+						name: "Option1",
+						value: "Left",
+						label: "Left side Perspective",
+						selected: true,
+						groupName: "PerspectiveDirection",
+						style: {
+							fontWeight: "bold",
+						},
+						events: {
+							change: function(event){
+								//alert(event.currentValues.PerspectiveDirection)
+								//alert(event.currentValues.UserAngle)
+								LR = -1;
+							}
+						},
+					} },
+					{ RadioButton: {
+						percentWidth: 100,
+						name: "Option2",
+						value: "Right",
+						label: "Right side Perspective",
+						groupName: "PerspectiveDirection",
+						style: {
+							fontWeight: "bold",
+						},
+						events: {
+							change: function(event){
+								LR = 1;
+							}
+						}
+					} },
+					
+					{ Spacer: { height: 10, } },
+					createHeader("Parameters"),
+					row([
+						{ Text: {
+							text: "Angle: ",
+							selectable: false,
+							style: {
+								fontWeight: "bold",
+								paddingLeft: 0,
+							}
+						} },
+						{ TextInput: {
+							name: "UserAngle",
+							text: angle,
+							restrict: "0-9 .",
+							maxChars: 5,
+							
+						} },
+					],100),
+				],
+			} },
+			
+			{ ControlBar: {
+				percentWidth: 100,
+				style: {
+					horizontalAlign: "left",
+				},
+				children: [
+					{ Button: {
+						name: "OKBtn",
+						label: "OK",
+						height: 30,
+					} },
+				]
+			} }
+		]
+	}
+	
+	var result = dialog.open(jsml);
+	
+	if(result){
+		//angle = result.UserAngle;
+		//alert(result.UserAngle);
+		//alert(result.PerspectiveDirection);
+		angle = Number(result.UserAngle)*LR;
+		isometric(angle);
+	}
+});
+
+
+
+
+function createHeader(inLabel){
+	return { HBox: {
+		percentWidth: 100,
+		style: {
+			verticalAlign: "middle",
+			horizontalAlign: "left",
+			paddingLeft: 4,
+			backgroundAlpha: .2,
+			backgroundColor: "0xbbbbbb",
+		},
+		children: [
+			{ Label: {
+				text: inLabel,
+				style: { fontWeight: "bold", color: "0x444444" }
+			} }
+		]
+	} };
+}
+
+
+function row(inChildren, rowWidth){
+	return { HBox: {
+		percentWidth: rowWidth,
+		styleName: "Row",
+		children: inChildren,
+	} };
+}
+
+
+
+
+function isometric(angle) {
+	var sel, dom, debug, i, symbolName, angle, objSuffix;
+	sel = fw.selection;
+	dom = fw.getDocumentDOM();
+	
+	//angle = Number(angle);
+	
+	objSuffix = '_isometoric';
+	var suffixRegexp = new RegExp(objSuffix, 'i')
+	debug = [];
+	for (i = 0; i < sel.length; i++) {
+		(function(ele) {
+			var grouping = new Array();
+			symbolName = ele.name;
+			if (!ele.name) {
+				symbolName = "symbol" + i;
+			}
+			fw.selection = ele;
+			if (fw.selection[0].toString() == '[object Group]' && symbolName.match(suffixRegexp)) {
+				dom.ungroup();
+				grouping = fw.selection;
+				// delete the backward object.
+				dom.selectNone();
+				fw.selection = grouping[1];
+				dom.deleteSelection(false);
+				// reset transformation of the forward object.
+				fw.selection = grouping[0];
+				symbolName = symbolName.substr(0, symbolName.length - 11);
+				dom.removeTransformation();
+				grouping = [];
+			} else {
+				dom.addNewLayer(symbolName, false);
+				dom.moveSelectionToLayer(i + 1, false, 'none', 0);
+				dom.convertToSymbol("graphic", "Symbol", false);
+				dom.setSymbolProperties(null, "graphic", symbolName, false);
+				dom.setElementName(symbolName + "_image");
+			}
+			dom.rotateSelection(angle, "autoTrimImages transformAttributes");
+			dom.scaleSelection(1.0, .5, "autoTrimImages transformAttributes");
+			grouping.push(fw.selection[0]);
+			dom.clipCopy();
+			dom.clipPaste();
+			dom.arrange("backward");
+			dom.setElementName(symbolName + "_base");
+			fw.getDocumentDOM().applyEffects({
+				category: "UNUSED",
+				effects: [{
+					EffectIsVisible: true,
+					EffectMoaID: "{b90c950e-64df-11d8-aaf2000a9582f7d4}",
+					MB_filter_preview_tile_size: "-1 -1",
+					angle: 270,
+					category: "Shadow and Glow",
+					color: "#ffffff00",
+					distance: 9,
+					name: "Solid Shadow...",
+					usecolor: false
+				}, {
+					EffectIsVisible: true,
+					EffectMoaID: "{a7944db8-6ce2-11d1-8c76000502701850}",
+					ShadowAngle: 276,
+					ShadowBlur: 20,
+					ShadowColor: "#00000066",
+					ShadowDistance: 33,
+					ShadowType: 0,
+					category: "Shadow and Glow",
+					name: "Drop Shadow"
+				}, {
+					EffectIsVisible: true,
+					EffectMoaID: "{3439b08c-1921-11d3-9bde00e02910d580}",
+					MB_filter_preview_tile_size: "-1 -1",
+					brightness_amount: -20,
+					category: "Adjust Color",
+					contrast_amount: 0,
+					name: "Brightness/Contrast..."
+				}, {
+					EffectIsVisible: true,
+					EffectMoaID: "{d04ef8c0-71b3-11d1-8c8200a024cdc039}",
+					MB_filter_preview_tile_size: "-1 -1",
+					category: "Blur",
+					gaussian_blur_radius: 0.599999999999999978,
+					name: "Gaussian Blur..."
+				}],
+				name: "UNUSED"
+			});
+			grouping.push(fw.selection[0]);
+			fw.selection = grouping;
+			dom.group('normal');
+			dom.setElementName(symbolName + objSuffix);
+			debug.push(ele.name);
+		})(sel[i]);
+	}
+	//alert( debug.length + " items have been moved to new layers" );
+};
+//isometric();

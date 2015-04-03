@@ -1,0 +1,92 @@
+/* ===========================================================================
+
+	File: Dots Paper
+
+	Author - WaveF
+	Copyright - 2013 WaveF.  All rights reserved.
+	Email - wavef@qq.com
+	Website - http://miniCG.com
+
+	Release - 1.0.0 ($Revision: 1.01 $)
+	Last update - $Date: 2013/09/04 00:59:58 $
+
+   ======================================================================== */
+
+var langFolder = Files.getLanguageDirectory();
+var arr = langFolder.split("/");
+var lang = arr[arr.length-1];
+if(lang.indexOf("Chinese") == -1){
+	str1 = "Create new A4 paper?\nOtherwise will use current canvas size.";
+	str2 = "Please enter dots diameter:";
+	str3 = "Please enter spacing value between dots:";
+	str4 = "You need to create/open a document first!";
+}else{
+	str1 = "是否创建新A4纸文档？\n否则以当前文档画布尺寸为基准创建点阵。";
+	str2 = "请输入圆点直径 (单位: 像素)\n1mm ≈ 12px";
+	str3 = "请输入间隔值 (单位: 像素)\n1mm ≈ 12px";
+	str4 = "您必须先创建一个新文档！";
+}
+
+var createNewA4Doc = fw.yesNoDialog(str1);
+
+if(createNewA4Doc){
+	var res = new Object();  
+	res.units = "inch";  
+	res.pixelsPerUnit = 300;  
+	var size = new Object();  
+	size.x = 2480;  
+	size.y = 3507;
+	var fwdoc = fw.createFireworksDocument(size, res, "#FFFFFF");
+}
+
+
+var dom = fw.getDocumentDOM();
+
+if(dom){
+	var dotSize = prompt(str2, "8");
+	var space = prompt(str3, "60");
+
+	dom.addNewOval({left:0, top:0, right:dotSize, bottom:dotSize});
+	dom.setBrushNColor(null, "#ffffff00");
+	dom.setBrushPlacement("inside");
+	dom.setFillNColor({ category:"fc_Solid", ditherColors:[ "#000000", "#000000" ], edgeType:"antialiased", feather:0, gradient:null, name:"Solid", pattern:null, shape:"solid", stampingMode:"blend opaque", textureBlend:0, webDitherTransparent:false }, "#cccccc");
+	//dom.convertToSymbol("graphic", "dot", false);
+	dom.flattenSelection();
+
+
+	var dotNumH = dom.width / space;
+	var dotNumV = dom.height / space;
+	var i;
+
+	for(i=0; i<dotNumH-2; i++){
+		dom.moveSelectionBy({x:space, y:0}, false, false);
+		dom.cloneSelection();
+	}
+
+	dom.selectAll();
+	dom.group("normal");
+	dom.flattenSelection();
+	dom.align('center vertical','true')
+
+	for(i=0; i<dotNumV-2; i++){
+		dom.moveSelectionBy({x:0, y:space}, false, false);
+		dom.cloneSelection();
+	}
+
+	dom.selectAll();
+	dom.group("normal");
+	dom.flattenSelection();
+	dom.align('center horizontal','true');
+	dom.selectAll();
+	dom.ungroup();
+	dom.ungroup();
+	dom.selectNone();
+}else{
+	alert(str4);
+}
+/*
+function getLanguage(){
+	var arr = Files.getLanguageDirectory().split("/");
+	var language = arr[arr.length-1]);
+	return language;
+}*/

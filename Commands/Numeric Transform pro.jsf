@@ -1,0 +1,791 @@
+var dom = fw.getDocumentDOM();
+var sel = fw.selection;
+var paramHeight = 230;
+var i, _x, _y, _w, _h;
+var lastWidth, lastHeight;
+var copiedRotate = false;
+
+
+if (typeof require != "function" || !require.version) {fw.runScript(fw.currentScriptDir + "/lib/fwrequire.js"); } require(["fwlib/dialog"], function(dialog){
+	if (!sel || sel.length == 0) {
+		alert('Please select something first!');
+		return;
+	}
+	
+	lastWidth = sel[0].width;
+	lastHeight = sel[0].height;
+	
+	var jsml = {
+		title: "Numeric Transform pro",
+		showTitle: false,
+		confirmButton: "OKBtn",
+		dismissButton: "CancelBtn",
+		//size: "300x325",
+		css: {
+			".Row": {
+				paddingLeft: 3,
+				paddingRight: 3,
+				paddingTop: 0,
+				horizontalGap: 0,
+				horizontalAlign: "left",
+				verticalAlign: "middle",
+			}
+		},
+		children: [
+			{ HBox: {
+				percentWidth: 100,
+				style: {
+					horizontalAlign: "center",
+				},
+				children: [
+					{ ComboBox: {
+						percentWidth: 100,
+						name: "OpMenu",
+						dataProvider: [
+							{ label: "Scale",	data: "_scale" },
+							{ label: "Resize",	data: "_resize" },
+							{ label: "Rotate",	data: "_rotate" }
+						],
+						events: {
+							change: function(event){
+								setBoxVisible(event);
+							}
+						},
+					} }
+				],
+			} },
+			//------------------------------------------------------------------------------------- Scale -------------------------------------------------------------------------------------
+			{ VBox: {
+				name: "ScaleBox",
+				percentWidth: 100,
+				height: paramHeight,
+				style: {
+					paddingTop: 12,
+				},
+				children: [
+					createHeader("Direction"),
+					row ([
+						{ VBox: {
+							style: {
+								paddingTop: 5,
+								paddingBottom: 5,
+							},
+							children: [
+								row ([
+									{ Label: {
+										width: 60,
+										text: "Horizontal:",
+									} },
+									{ NumericStepper: {
+										name: "ScaleX",
+										value: 100,
+										width: 60,
+										stepSize: 1,
+										maximum: 9999,
+										minimum: -9999,
+										events: {
+											change: function(event){
+												if(event.currentValues.lockRatio){
+													event.result.push(["ScaleY", "value", event.currentValues.ScaleX]);
+												}
+											}
+										},
+									} },
+									{ Label: {
+										width: 20,
+										text: "%",
+										style: {
+											paddingLeft: 1,
+										}
+									} },
+								], 80),
+								row ([
+									{ Label: {
+										width: 60,
+										text: "Vertival:",
+									} },
+									{ NumericStepper: {
+										name: "ScaleY",
+										value: 100,
+										width: 60,
+										stepSize: 1,
+										maximum: 9999,
+										minimum: -9999,
+										events: {
+											change: function(event){
+												if(event.currentValues.lockRatio){
+													event.result.push(["ScaleX", "value", event.currentValues.ScaleY]);
+												}
+											}
+										},
+									} },
+									{ Label: {
+										width: 20,
+										text: "%",
+										style: {
+											paddingLeft: 1,
+										}
+									} },
+								], 80),
+							]
+						} },
+						{ Image: {
+							width: 20,
+							height: 28,
+							name: "iconLockRatio",
+							source: "image/lockOn.png",
+						} },
+						
+						{ VBox: {
+							style: {
+								paddingLeft: 5,
+							},
+							children: [
+								row([
+									{ Label: {
+										percentWidth: 100,
+										text: "Step Transform",
+									} },
+									{ CheckBox: {
+										name: "StepX",
+										selected: false,
+										events: {
+											change: function(event){
+												if(event.currentValues.lockRatio){
+													event.result.push(["StepY", "selected", event.currentValues.StepX]);
+												}
+											}
+										},
+									} },
+								], 100),
+								row([
+									{ Label: {
+										percentWidth: 100,
+										text: "Step Transform",
+									} },
+									{ CheckBox: {
+										name: "StepY",
+										selected: false,
+										events: {
+											change: function(event){
+												if(event.currentValues.lockRatio){
+													event.result.push(["StepX", "selected", event.currentValues.StepY]);
+												}
+											}
+										},
+									} },
+								], 100),
+							]
+						} },
+					], 100),
+					//{ HRule: { percentWidth: 100, } },
+					{ Spacer: { height: 0 } },
+					createHeader("Parameters"),
+					{ CheckBox: {
+						name: "ScaleAttr",
+						label: "Scale attributes",
+						selected: true,
+						style: {
+							paddingTop: 0,
+							paddingBottom: 0,
+						},
+					} },
+					{ CheckBox: {
+						name: "lockRatio",
+						label: "Constrain proportions",
+						selected: true,
+						style: {
+							paddingTop: 0,
+							paddingBottom: 0,
+						},
+						events: {
+							change: function(event){
+								if(event.currentValues.lockRatio){
+									event.result.push(["iconLockRatio", "source", "image/lockOn.png"]);
+									event.result.push(["ScaleY", "text", event.currentValues.ScaleX]);
+								}else{
+									event.result.push(["iconLockRatio", "source", "image/lockOff.png"]);
+								}
+							},
+						},
+					} },
+				],
+			} },
+			//------------------------------------------------------------------------------------- Resize -------------------------------------------------------------------------------------
+			{ VBox: {
+				name: "ResizeBox",
+				height: 0,
+				percentWidth: 100,
+				style: {
+					//horizontalAlign: "center",
+					paddingTop: 6,
+				},
+				children: [
+					createHeader("Direction"),
+					row ([
+						{ VBox: {
+							style: {
+								paddingTop: 5,
+								paddingBottom: 5,
+							},
+							children: [
+								row ([
+									{ Label: {
+										width: 60,
+										text: "Horizontal:",
+									} },
+									{ NumericStepper: {
+										name: "ResizeX",
+										value: lastWidth,
+										width: 60,
+										stepSize: 1,
+										maximum: 9999,
+										minimum: -9999,
+										events: {
+											change: function(event){
+												if(event.currentValues.lockSizeRatio){
+													event.result.push(["ResizeY", "value", event.currentValues.ResizeX*lastHeight/lastWidth]);
+												}
+											}
+										},
+									} },
+									{ Label: {
+										width: 20,
+										text: "px",
+										style: {
+											paddingLeft: 1,
+										}
+									} },
+								], 80),
+								row ([
+									{ Label: {
+										width: 60,
+										text: "Vertival:",
+									} },
+									{ NumericStepper: {
+										name: "ResizeY",
+										value: lastHeight,
+										width: 60,
+										stepSize: 1,
+										maximum: 9999,
+										minimum: -9999,
+										events: {
+											change: function(event){
+												if(event.currentValues.lockSizeRatio){
+													event.result.push(["ResizeX", "value", event.currentValues.ResizeY*lastWidth/lastHeight]);
+												}
+											}
+										},
+									} },
+									{ Label: {
+										width: 20,
+										text: "px",
+										style: {
+											paddingLeft: 1,
+										}
+									} },
+								], 80),
+							]
+						} },
+						{ Image: {
+							width: 20,
+							height: 28,
+							name: "iconLockRatio2",
+							source: "image/lockOn.png",
+						} },
+						
+						{ VBox: {
+							style: {
+								paddingLeft: 5,
+							},
+							children: [
+								row([
+									{ Label: {
+										percentWidth: 100,
+										text: "Step Transform",
+									} },
+									{ CheckBox: {
+										name: "StepReX",
+										selected: false,
+										events: {
+											change: function(event){
+												if(event.currentValues.lockSizeRatio){
+													event.result.push(["StepReY", "selected", event.currentValues.StepReX]);
+												}
+											}
+										},
+									} },
+								], 100),
+								row([
+									{ Label: {
+										percentWidth: 100,
+										text: "Step Transform",
+									} },
+									{ CheckBox: {
+										name: "StepReY",
+										selected: false,
+										events: {
+											change: function(event){
+												if(event.currentValues.lockSizeRatio){
+													event.result.push(["StepReX", "selected", event.currentValues.StepReY]);
+												}
+											}
+										},
+									} },
+								], 100),
+							]
+						} },
+					], 100),
+					
+					{ Spacer: { height: 0 } },
+					createHeader("Parameters"),
+					{ CheckBox: {
+						name: "ResizeAttr",
+						label: "Resize attributes",
+						selected: true,
+						style: {
+							paddingTop: 0,
+							paddingBottom: 0,
+						},
+					} },
+					{ CheckBox: {
+						name: "lockSizeRatio",
+						label: "Constrain proportions",
+						selected: true,
+						style: {
+							paddingTop: 0,
+							paddingBottom: 0,
+						},
+						events: {
+							change: function(event){
+								if(event.currentValues.lockSizeRatio){
+									lastWidth = event.currentValues.ResizeX;
+									lastHeight = event.currentValues.ResizeY;
+									event.result.push(["iconLockRatio2", "source", "image/lockOn.png"]);
+								}else{
+									event.result.push(["iconLockRatio2", "source", "image/lockOff.png"]);
+								}
+							},
+						},
+					} },
+					{ CheckBox: {
+						name: "ResizeRange",
+						label: "Resize selected objects contour only",
+						selected: false,
+						style: {
+							paddingTop: 0,
+							paddingBottom: 0,
+						},
+						events: {
+							change: function(event){
+								if(event.currentValues.ResizeRange){
+									event.result.push(["StepReX", "selected", false]);
+									event.result.push(["StepReY", "selected", false]);
+									
+									event.result.push(["StepReX", "enabled", false]);
+									event.result.push(["StepReY", "enabled", false]);
+									event.result.push(["StepReY", "enabled", false]);
+								}else{
+									event.result.push(["StepReX", "enabled", true]);
+									event.result.push(["StepReY", "enabled", true]);
+								}
+							}
+						}
+					} },
+				],
+			} },
+			//------------------------------------------------------------------------------------- Rotate -------------------------------------------------------------------------------------
+			{ VBox: {
+				name: "RotateBox",
+				height: 0,
+				percentWidth: 100,
+				style: {
+					horizontalAlign: "center",
+					paddingTop: 0,
+				},
+				children: [
+					createHeader("Rotation"),
+					{ VBox: {
+						percentWidth: 100,
+						style: {
+							paddingTop: 5,
+							paddingBottom: 5,
+						},
+						children: [
+							row([
+								{ Label: {
+									width: 40,
+									text: "Angle:",
+									style: {
+										paddingLeft: 3,
+									}
+								} },
+								{ NumericStepper: {
+									name: "RotateAngle",
+									value: 10,
+									width: 62,
+									stepSize: 1,
+									maximum: 99999,
+									minimum: -99999,
+								} },
+								{ Label: {
+									width: 10,
+									text: "°",
+									style: {
+										paddingBottom: 8,
+										paddingLeft: 1,
+									},
+									toolTip: "degree",
+								} },
+								{ Spacer: { width: 5 } },
+								{ ComboBox: {
+									width: 67,
+									name: "AngleMenu",
+									dataProvider: [
+										{ label: "per",	data: "_per" },
+										{ label: "total", data: "_total" },
+									],
+									events: {
+										change: function(event){
+											if(event.currentValues.AngleMenu.selectedItem.data == "_per"){
+												event.result.push(["SymbolName", "editable", false]);
+												event.result.push(["ConvertSymbol", "selected", false]);
+												event.result.push(["ConvertSymbol", "enabled", false]);
+											}
+											if(event.currentValues.AngleMenu.selectedItem.data == "_total"){
+												event.result.push(["ConvertSymbol", "enabled", true]);
+											}
+										}
+									},
+									toolTip: "This option is only for Copy & Rotation.",
+								} },
+								{ VRule: {
+									width: 16,
+									height: 17,
+								} },
+								{ Label: {
+									text: "Step Rotate",
+								} },
+								{ CheckBox: {
+									name: "RotateStep",
+									selected: false,
+								} },
+							], 100),
+						]
+					} },
+					createHeader("Operation"),
+					//{ HRule: { percentWidth: 100 } },
+					{ VBox: {
+						style: {
+							paddingTop: 5,
+							paddingBottom: 5,
+							paddingLeft: 15,
+						},
+						children: [
+							{ Spacer: { height: 0 } },
+							row([
+								{ Button: {
+									name: "CopyBtn",
+									label: "Copy & Rotate",
+									width: 132,
+									events: {
+										click: function(event) {
+											var _att;
+											
+											copiedRotate = true;
+											
+											if(event.currentValues.RotateAttr){ _att = "autoTrimImages transformAttributes"; }else{ _att = "autoTrimImages"; }
+											
+											if(event.currentValues.GroupSelection){
+												dom.group("normal");
+											}
+											if(event.currentValues.ConvertSymbol){
+												dom.convertToSymbol("graphic", event.currentValues.SymbolName, false);
+											}
+											
+											if(event.currentValues.AngleMenu.selectedItem.label == "per"){
+												for(i=0; i<event.currentValues.CopyTimes; i++){
+													dom.clipCopy();
+													dom.clipPaste("do not resample", "vector");
+													
+													dom.rotateSelection(event.currentValues.RotateAngle, _att);
+												}
+											}
+											if(event.currentValues.AngleMenu.selectedItem.label == "total"){
+												var everyAngle = Math.floor(Number(event.currentValues.RotateAngle)/Number(event.currentValues.CopyTimes));
+												
+												for(i=0; i<event.currentValues.CopyTimes; i++){
+													dom.clipCopy();
+													dom.clipPaste("do not resample", "vector");
+													
+													dom.rotateSelection(everyAngle, _att);
+												}
+											}
+										}
+									}
+								} },
+								{ Label: {
+									text: "×",
+									style: {
+										paddingLeft: 6,
+									},
+								} },
+								{ NumericStepper: {
+									name: "CopyTimes",
+									value: 1,
+									percentWidth: 20,
+									stepSize: 1,
+									maximum: 999,
+									minimum: 1,
+									maxChars: 3,
+									events: {
+										change: function(event){
+											if(event.currentValues.CopyTimes > 100){ event.result.push(["CopyTimes","toolTip","You have entered a large number,\nplease group selection first!"]) }
+										}
+									}
+								} },
+								{ Label: {
+									text: "times",
+									style: {
+										paddingLeft: 6,
+									},
+								} },
+							], 100),
+							{ Spacer: { height: 0 } },
+						]
+					} },
+					createHeader("Parameters"),
+					row([
+						{ CheckBox: {
+							name: "ConvertSymbol",
+							label: "Symbol for Copy & Rotate:",
+							selected: false,
+							enabled: false,
+							events: {
+								change: function(event){
+									event.result.push(["SymbolName","editable",event.currentValues.ConvertSymbol]);
+									if(event.currentValues.ConvertSymbol){ event.result.push(["SymbolName","alpha",1]); }else{ event.result.push(["SymbolName","alpha",.4]); }
+								}
+							},
+							toolTip: "This option is only for Copy & Rotation.",
+							
+						} },
+						{ TextInput: {
+							name: "SymbolName",
+							text: "RotationSymbol",
+							percentWidth: 45,
+							restrict: "0-9 a-z A-Z _",
+							maxChars: 18,
+							editable: false,
+							alpha: .4,
+						} },
+					], 100),
+					{ HBox: {
+						percentWidth: 100,
+						style: {
+							paddingLeft: 3,
+							paddingTop: 2,
+						},
+						children: [
+							{ CheckBox: {
+								name: "GroupSelection",
+								label: "Make selection as Group",
+								width: 146,
+								selected: false,
+								toolTip: "This option is only for Copy & Rotation.",
+							} },
+							{ CheckBox: {
+								name: "RotateAttr",
+								label: "Rotate attributes",
+								selected: true,
+							} },
+						]
+					} },
+				],
+			} },
+			//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			{ ControlBar: {
+				children: [
+					{ Text: {
+						selectable: false,
+						htmlText: "<font color='#ff0000'><b>BETA VERSION 1.0.1</b></font>",
+					} },
+					{ Button: {
+						name: "OKBtn",
+						label: "OK",
+						width: 75
+					} }, 
+					{ Button: {
+						name: "CancelBtn",
+						label: "Cancel",
+						width: 75
+					} }
+				]
+			} }
+		]
+	}
+	
+	var result = dialog.open(jsml);
+	
+	if(result){
+		Update(result, result.OpMenu.selectedItem.label);
+	}
+});
+
+
+function Update(result, tab){
+	var att, stepFormulaX, stepFormulaY, stepFormulaR;
+	var tmpSel = [];
+	
+	if(tab == "Scale"){ //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// SCALE
+		var sx = result.ScaleX/100;
+		var sy = result.ScaleY/100;
+		
+		if(result.ScaleAttr){ att = "autoTrimImages transformAttributes"; }else{ att = "autoTrimImages"; }
+		
+		for(i=0; i<sel.length; i++){
+			dom.selectNone();
+			fw.selection = sel[i];
+			
+			if(result.StepX){ stepFormulaX = (i+1)/sel.length; }else{ stepFormulaX = 1; }
+			if(result.StepY){ stepFormulaY = (i+1)/sel.length; }else{ stepFormulaY = 1; }
+			
+			if(result.ScaleX > 100){
+				dom.scaleSelection(1+sx*stepFormulaX, 1, att);
+			}
+			if(result.ScaleX < 100){
+				dom.scaleSelection(1-(1-sx)*stepFormulaX, 1, att);
+			}
+			if(result.ScaleY > 100){
+				dom.scaleSelection(1, 1+sy*stepFormulaY, att);
+			}
+			if(result.ScaleY < 100){
+				dom.scaleSelection(1, 1-(1-sy)*stepFormulaY, att);
+			}
+		}
+	}
+	
+	if(tab == "Resize"){ //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// RESIZE
+		var rx = result.ResizeX/100;
+		var ry = result.ResizeY/100;
+		
+		if(result.ScaleAttr){ att = "autoTrimImages transformAttributes"; }else{ att = "autoTrimImages"; }
+		
+		for(i=0; i<sel.length; i++){
+			dom.selectNone();
+			fw.selection = sel[i];
+			
+			_x = sel[i].left;
+			_y = sel[i].top;
+			_w = sel[i].width;
+			_h = sel[i].height;
+			
+			if(result.StepReX){ stepFormulaX = (sel.length-i-1)/(sel.length-1); }else{ stepFormulaX = 1; }
+			if(result.StepReY){ stepFormulaY = (sel.length-i-1)/(sel.length-1); }else{ stepFormulaY = 1; }
+			
+			if(!result.ResizeRange){
+				//恕我愚钝小学数学没学好懒得想，有好的算法请联系我 wavef@qq.com
+				if(result.ResizeX>_w && result.ResizeY>_h){
+					dom.setSelectionBounds({left:_x, top:_y, right:_x+_w+Math.abs((result.ResizeX-_w)*stepFormulaX), bottom:_y+_h+Math.abs((result.ResizeY-_h)*stepFormulaY)}, att);
+					dom.moveSelectionBy({x:-(fw.selection[0].width-_w)*.5, y:-(fw.selection[0].height-_h)*.5}, false, false);
+				}
+				if(result.ResizeX<_w && result.ResizeY<_h){
+					dom.setSelectionBounds({left:_x, top:_y, right:_x+_w-Math.abs((result.ResizeX-_w)*stepFormulaX), bottom:_y+_h-Math.abs((result.ResizeY-_h)*stepFormulaY)}, att);
+					dom.moveSelectionBy({x:(_w-fw.selection[0].width)*.5, y:(_h-fw.selection[0].height)*.5}, false, false);
+				}
+				if(result.ResizeX>_w && result.ResizeY<_h){
+					dom.setSelectionBounds({left:_x, top:_y, right:_x+_w+Math.abs((result.ResizeX-_w)*stepFormulaX), bottom:_y+_h-Math.abs((result.ResizeY-_h)*stepFormulaY)}, att);
+					dom.moveSelectionBy({x:(-fw.selection[0].width-_w)*.5, y:(_h-fw.selection[0].height)*.5}, false, false);
+				}
+				if(result.ResizeX<_w && result.ResizeY>_h){
+					dom.setSelectionBounds({left:_x, top:_y, right:_x+_w-Math.abs((result.ResizeX-_w)*stepFormulaX), bottom:_y+_h+Math.abs((result.ResizeY-_h)*stepFormulaY)}, att);
+					dom.moveSelectionBy({x:(_w-fw.selection[0].width)*.5, y:-(fw.selection[0].height-_h)*.5}, false, false);
+				}
+			}else{
+				if(result.ResizeX>_w || result.ResizeY>_h){
+					tmpSel.push(sel[i]);
+					
+					dom.addNewRectanglePrimitive({left:_x, top:_y, right:_x+result.ResizeX, bottom:_y+result.ResizeY}, 0);
+					dom.ungroup();
+					dom.setOpacity(0);
+					dom.moveSelectionBy({x:-(result.ResizeX-_w)*.5, y:-(result.ResizeY-_h)*.5}, false, false);
+					dom.arrange("back");
+					
+					tmpSel.push(fw.selection[0]);
+					fw.selection = tmpSel;
+					dom.group("normal");
+				}
+				tmpSel = [];
+			}
+		}
+	}
+	
+	if(tab == "Rotate"){ //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ROTATE
+		if(copiedRotate){
+			var goOn = fw.yesNoDialog("You've already used the Copy & Rotate function,\nstill want to rotate the original objects?");
+		}
+		if(!goOn){
+			if(result.RotateAttr){ att = "autoTrimImages transformAttributes"; }else{ att = "autoTrimImages"; }
+			if(result.GroupSelection){ dom.group("normal"); }
+			
+			for(i=0; i<sel.length; i++){
+				dom.selectNone();
+				fw.selection = sel[i];
+				
+				if(result.RotateStep){ stepFormulaR = (i+1)/sel.length; }else{ stepFormulaR = 1; }
+				dom.rotateSelection(result.RotateAngle*stepFormulaR, att);
+			}
+		}
+	}
+	fw.selection = null;
+}
+
+
+function createHeader(inLabel){
+	return { HBox: {
+		percentWidth: 100,
+		style: {
+			verticalAlign: "middle",
+			horizontalAlign: "left",
+			paddingLeft: 4,
+			backgroundAlpha: .2,
+			backgroundColor: "0xbbbbbb",
+		},
+		children: [
+			{ Label: {
+				text: inLabel,
+				style: { fontWeight: "bold", color: "0x444444" }
+			} }
+		]
+	} };
+}
+
+
+function row(inChildren, rowWidth){
+	return { HBox: {
+		percentWidth: rowWidth,
+		styleName: "Row",
+		children: inChildren,
+	} };
+}
+
+
+function setBoxVisible(inEvent){
+	switch(inEvent.currentValues.OpMenu.selectedItem.label){
+		case "Scale":
+			inEvent.result.push(["ScaleBox","height",paramHeight]);
+			inEvent.result.push(["ResizeBox","height",0]);
+			inEvent.result.push(["RotateBox","height",0]);
+			break;
+		case "Resize":
+			inEvent.result.push(["ScaleBox","height",0]);
+			inEvent.result.push(["ResizeBox","height",paramHeight]);
+			inEvent.result.push(["RotateBox","height",0]);
+			break;
+		case "Rotate":
+			inEvent.result.push(["ScaleBox","height",0]);
+			inEvent.result.push(["ResizeBox","height",0]);
+			inEvent.result.push(["RotateBox","height",paramHeight]);
+			break;
+	}
+}

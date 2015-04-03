@@ -1,0 +1,80 @@
+﻿/**************************************************
+	BlendModeSymbol command for Adobe Fireworks
+	Code by WaveF
+	miniCG.com
+***************************************************/
+
+var langFolder = Files.getLanguageDirectory();
+var arr = langFolder.split("/");
+var lang = arr[arr.length-1];
+if(lang.indexOf("Chinese") == -1){
+	str1 = "Please enter symbol name:\n(the layer which names 'main' will mask the whole shape)";
+	str2 = "BlendModeSymbol";
+	str3 = "Select something first!";
+}else{
+	str1 = "请输入元件名称：\n（命名为main的图层将对整体外形做遮罩处理）";
+	str2 = "混合模式元件";
+	str3 = "你还没选中任何图层！";
+}
+
+var mainDOM = fw.getDocumentDOM();
+var remask = false;
+
+if(mainDOM){
+	if (fw.selection.length){
+		var i;
+		var symbolName = prompt(str1, str2);
+		if(symbolName){
+			mainDOM.convertToSymbol("graphic", symbolName, false);
+			mainDOM.editSymbol(fw.selection[0].symbolID);
+			
+			var symbolDOM = fw.getDocumentDOM();
+			symbolDOM.selectAll();
+			var symSel = fw.selection;
+			for(i=0; i<fw.selection.length; i++){
+				if(fw.selection[i].name == "main"){
+					remask = true;
+					fw.selection = [fw.selection[i]];
+					symbolDOM.clipCopy();
+					symbolDOM.clipPaste("do not resample", "vector");
+					fw.getDocumentDOM().arrange("front");
+				}
+			}
+			if(remask){
+				fw.selection = symSel;
+				symbolDOM.group("normal");
+				symbolDOM.clipCopy();
+				symbolDOM.setElementVisible(-1, 0, 0, false);
+				symbolDOM.clipPaste("do not resample", "vector");
+				symbolDOM.ungroup();
+				symbolDOM.flattenSelection();
+				symbolDOM.selectAll();
+				for(i=0; i<fw.selection.length; i++){
+					if(fw.selection[i].name == "main"){
+						fw.selection = [fw.selection[i]];
+						symbolDOM.clipCut();
+					}
+				}
+				symbolDOM.selectAll();
+				for(i=0; i<fw.selection.length; i++){
+					if(fw.selection[i] == "[object Image]"){
+						var flattedImg = fw.selection[i];
+						fw.selection = [fw.selection[i]];
+						symbolDOM.clipPasteAsMask("ask user", "vector", "ask user");
+						fw.selection = [flattedImg];
+					}
+				}
+			}else{
+				symbolDOM.group("normal");
+				symbolDOM.clipCopy();
+				symbolDOM.setElementVisible(-1, 0, 0, false);
+				symbolDOM.clipPaste("do not resample", "vector");
+				symbolDOM.ungroup();
+			}
+			symbolDOM.flattenSelection();
+			symbolDOM.exitSymbolEdit(1);
+		}
+	}else{
+		alert(str3);
+	}
+}

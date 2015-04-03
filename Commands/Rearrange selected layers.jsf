@@ -1,0 +1,48 @@
+// JavaScript for Fireworks
+// access the command through Commands > Rearrange layers
+// use 'Manage Saved Commands...' from Commands menu to delete existing commands
+
+(function(){
+	
+	var dom = fw.getDocumentDOM();
+	
+	if(!fw.selection){ return }
+	if(fw.selection.length<1){ return }
+	
+	var i, j, k = 0;
+	var sp;
+	var currentName, currentIdx;
+	var sel = fw.selection;
+	
+	for(i=0; i<sel.length; i++){
+		if(sel[i]=="[object SliceHotspot]"){ k++ }
+	}
+	
+	if(k!=sel.length && k!=0){ alert("选取的对象中不能同时包含切片与图形！"); return }
+	
+	//sp = prompt("序号分隔符（用于识别图层序号）：", "_");
+	sp = "_";
+	
+	for(i=0; i<sel.length; i++){
+	
+		for(j=0; j<sel.length; j++){
+		
+			if(k==sel.length){currentName = sel[j].baseName}
+			if(k==0){currentName = sel[j].name}
+			
+			if(currentName==null || currentName.indexOf("_")==-1){ alert("请以下划线为分隔符定义图层序号！\n\n如：Layer_1, Layer_2..."); break }
+			
+			currentIdx = currentName.split(sp)[1];
+			
+			if(currentIdx == i+1){
+				fw.selection = [sel[j]];
+				dom.arrange("front");
+			}
+			
+		}
+		
+	}
+	
+	fw.selection = sel;
+	
+})();

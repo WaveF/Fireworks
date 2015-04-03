@@ -1,0 +1,31 @@
+// JavaScript for Fireworks
+// access the command through Commands > Batch Flatten
+// use 'Manage Saved Commands...' from Commands menu to delete existing commands
+
+(function(){
+
+	var dom = fw.getDocumentDOM();
+	
+	if(!fw.selection){ return }
+	if(fw.selection.length<1){ return }
+	
+	var sel = fw.selection;
+	var newSel = [];
+	
+	for(var i=0; i<sel.length; i++){
+	
+		fw.selection = [sel[i]];
+		
+		dom.cloneSelection();
+		
+		dom.flattenSelection();
+		
+		newSel.push(fw.selection[0]);
+	}
+	
+	fw.selection = sel;
+	dom.deleteSelection(false);
+	fw.selection = newSel;
+	
+})();
+

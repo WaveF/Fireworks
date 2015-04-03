@@ -1,0 +1,94 @@
+var dom = fw.getDocumentDOM();
+var sel = fw.selection;
+var el;
+var fx;
+
+if (typeof require != "function" || !require.version) {fw.runScript(fw.currentScriptDir + "/lib/fwrequire.js"); } require(["fwlib/dialog"], function(dialog){
+	if (!sel || sel.length==0 || sel.length>1) {
+		alert('Please select 1 object.');
+		return;
+	}
+	
+	el = sel[0];
+	fx = el.effectList;
+	
+	var jsml = {
+		title: "PSA",
+		showTitle: false,
+		confirmButton: "OKBtn",
+		dismissButton: "CancelBtn",
+		css: {
+			".Row": {
+				paddingLeft: 3,
+				paddingRight: 3,
+				paddingTop: 0,
+				horizontalGap: 0,
+				horizontalAlign: "left",
+				verticalAlign: "middle",
+			}
+		},
+		children: [
+			{ HBox: {
+			} },
+			//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			{ ControlBar: {
+				children: [
+					{ Button: {
+						name: "OKBtn",
+						label: "OK",
+						width: 75
+					} }, 
+					{ Button: {
+						name: "CancelBtn",
+						label: "Cancel",
+						width: 75
+					} }
+				]
+			} }
+		]
+	}
+	
+	var result = dialog.open(jsml);
+	
+	if(result){
+		alert(fx);
+	}
+});
+
+
+
+
+function createHeader(inLabel){
+	return { HBox: {
+		percentWidth: 100,
+		style: {
+			verticalAlign: "middle",
+			horizontalAlign: "left",
+			paddingLeft: 4,
+			backgroundAlpha: .2,
+			backgroundColor: "0xbbbbbb",
+		},
+		children: [
+			{ Label: {
+				text: inLabel,
+				style: { fontWeight: "bold", color: "0x444444" }
+			} }
+		]
+	} };
+}
+
+function col(inChildren, colWidth){
+	return { HBox: {
+		percentWidth: colWidth,
+		styleName: "Col",
+		children: inChildren,
+	} };
+}
+
+function row(inChildren, rowWidth){
+	return { HBox: {
+		percentWidth: rowWidth,
+		styleName: "Row",
+		children: inChildren,
+	} };
+}

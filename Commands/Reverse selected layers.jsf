@@ -1,0 +1,16 @@
+// JavaScript for Fireworks
+// access the command through Commands > Reverse selected layers
+// use 'Manage Saved Commands...' from Commands menu to delete existing commands
+
+(function(){
+	var dom = fw.getDocumentDOM();
+	if(!fw.selection){ return }
+	if(fw.selection<2){ return }
+	
+	var sel = fw.selection;
+	for(var i=0; i<sel.length; i++){
+		fw.selection = sel[i];
+		dom.arrange("front");
+	}
+	fw.selection = sel;
+})();

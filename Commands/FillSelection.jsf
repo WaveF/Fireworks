@@ -1,0 +1,16 @@
+﻿var dom = fw.getDocumentDOM();
+var sel = fw.selection;
+var u = fw.yesNoDialog("Yes = Rectangle\nNo = Oval");
+if(sel.length>0){
+	if(sel.length>1){ dom.group("normal"); }
+	if(u){
+		dom.addNewRectanglePrimitive({left:sel[0].left, top:sel[0].top, right:sel[0].left+sel[0].width, bottom:sel[0].top+sel[0].height}, 0);
+	}else{
+		dom.addNewOval({left:sel[0].left, top:sel[0].top, right:sel[0].left+sel[0].width, bottom:sel[0].top+sel[0].height});
+	}
+	dom.clipCut();
+	fw.selection = sel;
+	dom.clipPaste();
+}else{
+	alert("You must select at lease one object!");
+}

@@ -1,0 +1,46 @@
+﻿/**************************************************
+	"Paste Hex to Object" command for Adobe Fireworks
+	Code by WaveF
+	miniCG.com
+***************************************************/
+
+var langFolder = Files.getLanguageDirectory();
+var arr = langFolder.split("/");
+var lang = arr[arr.length-1];
+if(lang.indexOf("Chinese") == -1){
+	str1 = "Please a vector object first!";
+	str2 = "Can't get HEX value, make sure the HEX value in your system clipboard!";
+	str3 = "You have selected a Group Object, please use subselection tool to pick some sub-objects.";
+}else{
+	str1 = "请先选取一个矢量对象！";
+	str2 = "无法获取Hex色值，请确保其存在于系统剪贴板！";
+	str3 = "你选择了一个群组对象，请使用子组选择工具选择其中的子对象。";
+}
+
+var dom = fw.getDocumentDOM();
+var oldSel = fw.selection;
+var newSel;
+
+if(oldSel.length>0){
+	if(oldSel[0]!="[object Group]"){
+		dom.clipPaste("do not resample", "vector");
+		newSel = fw.selection;
+		
+		if(newSel[0]=="[object Text]"){
+			var hexVal = newSel[0].textChars;
+			if(hexVal.indexOf("#") == -1){hexVal="#"+hexVal}
+			dom.deleteSelection(false);
+		}else{
+			alert(str2);
+		}
+		
+		fw.selection = oldSel;
+		for(var i=0; i<oldSel.length; i++){
+			if(oldSel[i].pathAttributes){ oldSel[i].pathAttributes.fillColor = hexVal; }
+		}
+	}else{
+		alert(str3);
+	}
+}else{
+	alert(str1);
+}

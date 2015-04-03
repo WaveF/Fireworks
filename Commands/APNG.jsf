@@ -1,0 +1,130 @@
+var langFolder = Files.getLanguageDirectory();
+var arr = langFolder.split("/");
+var lang = arr[arr.length-1];
+if(lang.indexOf("Chinese") == -1){
+	str1 = "Skip first frame?\nThe first frame will be shown on APNG unsupported browsers.";
+}else{
+	str1 = "是否启用兼容支持？\n第一帧将仅被用于显示在不支持apng的浏览器上...";
+}
+
+var dom	= fw.getDocumentDOM();
+var delayTime = [];
+var i, id, totalFrames;
+
+var domPath = fw.getDocumentPath(dom);
+
+var domPathHandler = domPath.split("/");
+	domPathHandler[domPathHandler.length-1] = "";
+	domPath = domPathHandler.join("/");
+
+if(domPath[domPath.length-1]=="/"){ domPath = domPath.substr(0,domPath.length-1); }
+
+
+init();
+
+var params = "";
+var Compatible = fw.yesNoDialog(str1);
+if(Compatible){ params += " /f" }
+
+var Looping = dom.frameLoopingCount;
+params += " /l" + Looping;
+
+var KeepPalette = true;
+if(KeepPalette){ params += " /kp" }
+
+var KeepColorType = true;
+if(KeepColorType){ params += " /kc" }
+
+
+if(domPath!=""){
+
+	var tempPath = domPath+"/apngTemp";
+	Files.deleteFileIfExisting(tempPath);
+	Files.createDirectory(tempPath);
+
+	for(i=1; i<=totalFrames; i++){
+		if(i<10){ id="0"+i.toString(); }else{ id=i.toString(); }
+		
+		var frameImageFilePath = tempPath + "/frame" + id + ".png";
+		dom.currentFrameNum = (i-1);
+		dom.exportTo(frameImageFilePath, exportOptions);
+		
+		var frameTextFilePath = tempPath + "/frame" + id + ".txt";
+		Files.createFile(frameTextFilePath, "TEXT", "????");
+		
+		var frameTextFile = Files.open(frameTextFilePath, true);
+		var frameText = "delay=" + delayTime[i-1] + "/100";
+		frameTextFile.write(frameText);
+		frameTextFile.close();
+	}
+	
+	Files.copy(fw.currentScriptDir+"/apngasm.exe", tempPath+"/apngasm.exe");
+	var batchFilePath = tempPath + "/convert.bat";
+	Files.deleteFileIfExisting(batchFilePath);
+	Files.createFile(batchFilePath, "TEXT", "????");
+	var batchFile = Files.open(batchFilePath, true);
+	var batchText = "@echo off\ncls\ncd /d %~dp0\napngasm animation.png frame*.png"+ params +"\ncopy/y .\\animation.png ..\\animation.png\ncd..\nrd /s/q apngTemp";
+	batchFile.write(batchText);
+	batchFile.close();
+	fw.launchApp(batchFilePath, []);
+
+}else{
+	alert("你必须先保存当前文件！");
+}
+
+
+//------ functions ------//
+function init(){
+
+	totalFrames = dom.frameCount;
+	
+	for(i=0; i<totalFrames; i++){
+		delayTime.push(dom.frames[i].delay);
+	}
+	
+	exportOptions = {
+		animAutoCrop: true,
+		animAutoDifference: false,
+		applyScale: false,
+		colorMode: "32 bit",
+		crop: false,
+		cropBottom: 0,
+		cropLeft: 0,
+		cropRight: 0,
+		cropTop: 0,
+		ditherMode: "none",
+		ditherPercent: 100,
+		exportFormat: "PNG",
+		frameInfo: [  ],
+		interlacedGIF: false,
+		jpegQuality: 80,
+		jpegSelPreserveButtons: false,
+		jpegSelPreserveText: true,
+		jpegSelQuality: 90,
+		jpegSelQualityEnabled: false,
+		jpegSmoothness: 0,
+		jpegSubsampling: 0,
+		localAdaptive: true,
+		lossyGifAmount: 0,
+		macCreator: "????",
+		macFileType: "????",
+		name: null,
+		numCustomEntries: 0,
+		numEntriesRequested: 0,
+		numGridEntries: 6,
+		optimized: true,
+		paletteEntries: null,
+		paletteInfo: null,
+		paletteMode: "adaptive",
+		paletteTransparency: "none",
+		percentScale: 100,
+		progressiveJPEG: false,
+		savedAnimationRepeat: 0,
+		sorting: "none",
+		useScale: true,
+		webSnapAdaptive: false,
+		webSnapTolerance: 14,
+		xSize: 0,
+		ySize: 0
+	};
+}

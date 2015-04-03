@@ -2,7 +2,6 @@
 /*                   miniCG.com - by WaveF                 */
 /*---------------------------------------------------------*/
 
-
 var totalFrames = fw.getDocumentDOM().frameCount;
 var currentFrame = fw.getDocumentDOM().currentFrameNum
 var step = prompt("Enter delete frames interval（間隔值）:", 1);

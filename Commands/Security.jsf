@@ -1,0 +1,59 @@
+/*
+miniCG.com
+by WaveF
+Security v1.0 commands for Fireworks
+
+* INSTALLATION:
+  copying this file to
+
+  Windows:
+  C:\Program Files (x86)\Adobe\Adobe Fireworks CS5\Configuration\Commands
+
+  OSX:
+  /Applications/Adobe Fireworks CS5/Configuration/Commands
+
+* RUN
+  access the command through Commands > Security
+
+* MANAGE COMMANDS
+  use 'Manage Saved Commands...' from Commands menu to delete existing commands
+
+*/
+
+var pwd = prompt('Enter a password to lock down Fireworks:', 'miniCG.com');
+
+if(pwd!=null){
+	var usr = '';
+
+	var res = new Object();  
+	res.units = "inch";  
+	res.pixelsPerUnit = 72;  
+	var size = new Object();  
+	size.x = 800;  
+	size.y = 600;
+	var fwdoc = fw.createFireworksDocument(size, res, "#FDE35B");
+	var dom = fw.getDocumentDOM();
+	dom.addNewText({left:0, top:100, right:0, bottom:0}, true);
+	fw.selection[0].textChars = 'Fireworks has been locked!';
+	dom.applyFontMarkup("face", "Impact");
+	dom.setFillColor("#000000");
+	dom.applyFontMarkup("size", "40pt");
+	dom.removeCharacterMarkup("b");
+	fw.getDocumentDOM().removeCharacterMarkup("i");
+	dom.changeCurrentPage(dom.currentPageNum);
+	//dom.align('center horizontal','true');
+	dom.align('center vertical','true');
+	dom.selectNone();
+
+	for(var i=0; i<4; i++){
+		if(usr != pwd){
+			i = 2;
+			usr = prompt('You must enter a password to unlock Fireworks:', '');
+		}else{
+			i = 8;
+		}
+	}
+
+	dom.selectAll();
+	if(fw.selection[0].textChars=='Fireworks has been locked!'){ dom.close(false) }
+}

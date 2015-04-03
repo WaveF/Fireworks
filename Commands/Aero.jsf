@@ -1,0 +1,87 @@
+/*
+miniCG.com
+by WaveF
+Aero v2.0 commands for Fireworks
+
+* INSTALLATION:
+  copying this file to
+
+  Windows:
+  C:\Program Files (x86)\Adobe\Adobe Fireworks CS5\Configuration\Commands
+
+  OSX:
+  /Applications/Adobe Fireworks CS5/Configuration/Commands
+
+* RUN
+  access the command through Commands > Aero
+
+* MANAGE COMMANDS
+  use 'Manage Saved Commands...' from Commands menu to delete existing commands
+
+*/
+
+(function(){
+	if(fw.documents.length==0) return;
+	if(fw.selection==null){ return; }
+	if(fw.selection.length!=1){ return; }
+	
+	var blurry = 28;
+	
+	var newEffect;
+	var dom = fw.getDocumentDOM();
+	var obj = fw.selection;
+	var exportPath = fw.appDir + "/temp.png";
+	
+	if(fw.selection[0].name=="Aero Object"){
+		newEffect = false;
+	}else{
+		newEffect = true;
+		if(fw.selection[0].opacity!=100){ dom.group("normal"); }
+	}
+	
+	if(newEffect){
+		createAeroEffect();
+	}else{
+		if(obj[0].name!="Aero Object"){ return; }
+		dom.ungroup();
+		var gSel = fw.selection;
+		for(i in gSel){
+			fw.selection = [gSel[i]];
+			if(fw.selection[0]=="[object Image]"){
+				dom.deleteSelection(false);
+			}else{
+				obj = fw.selection;
+			}
+		}
+		fw.selection = obj;
+		createAeroEffect();
+	}
+	
+	function createAeroEffect(){
+		dom.clipCopy();
+		dom.setOpacity(0);
+		exportImagePNG();
+		dom.setOpacity(100);
+		dom.importFile(exportPath, {left:0, top:0, right:0, bottom:0}, false, 0, false);
+		dom.arrange("backward");
+		dom.filterSelection({ EffectMoaID:"{d04ef8c0-71b3-11d1-8c8200a024cdc039}", MB_filter_preview_tile_size:"-1 -1", gaussian_blur_radius:blurry });
+		dom.clipPasteAsMask("ask user", "vector", "ask user");
+		var msk = fw.selection;
+		//dom.linkElementMask(false);
+		
+		dom.selectParents();
+		var msked = fw.selection;
+		dom.applyEffects({ category:"UNUSED", effects:[ { EffectIsVisible:true, EffectMoaID:"{a7944db8-6ce2-11d1-8c76000502701850}", ShadowAngle:270, ShadowBlur:40, ShadowColor:"#00000033", ShadowDistance:8, ShadowType:0, category:"Shadow and Glow", name:"Drop Shadow" } ], name:"UNUSED" });
+		
+		fw.selection = [obj[0],msked[0]];
+		dom.group("normal");
+		dom.setElementName("Aero Object");
+	}
+	
+	function exportImagePNG(){
+		var exportOption = {animAutoCrop:true,animAutoDifference:true,applyScale:false,colorMode:"32 bit",crop:false,cropBottom:0,cropLeft:0,cropRight:0,cropTop:0,ditherMode:"none",ditherPercent:100,exportFormat:"PNG",frameInfo:[],interlacedGIF:false,jpegQuality:80,jpegSelPreserveButtons:false,jpegSelPreserveText:true,jpegSelQuality:90,jpegSelQualityEnabled:false,jpegSmoothness:0,jpegSubsampling:0,localAdaptive:true,lossyGifAmount:0,macCreator:"????",macFileType:"????",name:"PNG32",numCustomEntries:0,numEntriesRequested:0,numGridEntries:6,optimized:true,paletteEntries:undefined,paletteInfo:undefined,paletteMode:"adaptive",paletteTransparency:"none",percentScale:100,progressiveJPEG:false,savedAnimationRepeat:0,sorting:"none",useScale:true,webSnapAdaptive:false,webSnapTolerance:14,xSize:0,ySize:0,};
+		var deleteImage = Files.deleteFileIfExisting(exportPath);
+		dom.exportTo(exportPath, exportOption);
+	}
+})();
+
