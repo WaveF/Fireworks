@@ -1,6 +1,0 @@
-[21/May/2014:15:12:11 +0800] Failed to bind the socket, error #50.
-
-Probable reason is that another daemon is already running on the same port (81).
-[21/May/2014:15:13:43 +0800] Failed to bind the socket, error #50.
-
-Probable reason is that another daemon is already running on the same port (81).
