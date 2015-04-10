@@ -1,0 +1,21 @@
+// Fireworks JavaScript Command
+// Copy to Fireworks/Configuration/Commands/
+// WaveF - http://miniCG.com
+// Version 1.0
+
+(function(){
+	var dom = fw.getDocumentDOM();
+	var sel = fw.selection;
+	
+	if(!sel) return;
+	if(sel.length<1) return;
+	
+	for(var i=0; i<sel.length; i++){
+		if(sel[i]=="[object Text]"){
+			sel[i].textChars = sel[i].textChars.split('\r').join('');
+			sel[i].textChars = sel[i].textChars.split('\n').join('');
+			dom.changeCurrentPage(dom.currentPageNum);
+		}
+	}
+
+})();
