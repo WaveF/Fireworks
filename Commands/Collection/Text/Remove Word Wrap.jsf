@@ -14,8 +14,8 @@
 		if(sel[i]=="[object Text]"){
 			sel[i].textChars = sel[i].textChars.split('\r').join('');
 			sel[i].textChars = sel[i].textChars.split('\n').join('');
-			dom.changeCurrentPage(dom.currentPageNum);
 		}
 	}
 
+	dom.changeCurrentPage(dom.currentPageNum);
 })();
