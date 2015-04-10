@@ -1,6 +1,0 @@
-#set cmd to "cd " & (path to documents folder as string) & "fwplay"
-#do shell script "cd /Users/wavef/Documents/fwplay"
-#do shell script cmd
-#do shell script "python -mSimpleHTTPServer > /dev/null 2>&1 &"
-
-do shell script "cd ~/Documents/fwplay; python -mSimpleHTTPServer > /dev/null 2>&1 &"

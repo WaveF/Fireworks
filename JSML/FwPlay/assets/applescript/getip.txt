@@ -1,5 +1,0 @@
-set ipFilePath to (path to documents folder as string) & "fwplay:macip.txt"
-set ipFile to open for access file ipFilePath with write permission
-set ipAddress to do shell script "ifconfig en0|grep 'inet '|cut -d ' ' -f 2"
-write ipAddress to ipFile
-close access ipFile
