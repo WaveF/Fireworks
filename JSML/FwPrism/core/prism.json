@@ -1,8 +1,9 @@
 {
-	"modID": 1,
+	"modID": 3,
 	"modList": [
 		"Market",
 		"Renamer",
-		"Retina Assistant"
+		"Retina Assistant",
+		"Unit Converter"
 	]
 }
