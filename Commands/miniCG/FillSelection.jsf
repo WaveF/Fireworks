@@ -1,16 +1,53 @@
-﻿var dom = fw.getDocumentDOM();
-var sel = fw.selection;
-var u = fw.yesNoDialog("Yes = Rectangle\nNo = Oval");
-if(sel.length>0){
-	if(sel.length>1){ dom.group("normal"); }
-	if(u){
-		dom.addNewRectanglePrimitive({left:sel[0].left, top:sel[0].top, right:sel[0].left+sel[0].width, bottom:sel[0].top+sel[0].height}, 0);
+﻿/*
+	Fill Selection
+	command for Adobe Fireworks
+	Code by WaveF
+	miniCG.com
+*/
+
+var dom = fw.getDocumentDOM();
+var selectOriginalObjects = false;
+
+(function() {
+
+	var sel = fw.selection?fw.selection:[];
+	if(sel.length<1) return;
+
+	var type = fw.yesNoDialog("Yes = Rectangle\nNo = Oval");
+
+	var newShapes = [];
+
+	if(sel.length>0){
+		for(i in sel){
+			if(type){
+				dom.addNewRectanglePrimitive({left:sel[i].left, top:sel[i].top, right:sel[i].left+sel[i].width, bottom:sel[i].top+sel[i].height}, 0);
+				dom.ungroup();
+			}else{
+				dom.addNewOval({left:sel[i].left, top:sel[i].top, right:sel[i].left+sel[i].width, bottom:sel[i].top+sel[i].height});
+			}
+
+
+			dom.setFillColor("#00ACEE80");
+			dom.setBrushNColor(null, "#ffffff00");
+
+			newShapes.push(fw.selection[0]);
+			dom.selectNone();
+		}
+
+		if(selectOriginalObjects){
+			// dom.group("normal");
+			dom.clipCut();
+			fw.selection = sel;
+			dom.clipPaste();
+			fw.selection = sel;
+		}else{
+			fw.selection = newShapes;
+		}
+
 	}else{
-		dom.addNewOval({left:sel[0].left, top:sel[0].top, right:sel[0].left+sel[0].width, bottom:sel[0].top+sel[0].height});
+
+		alert("You must select at lease one object!");
+
 	}
-	dom.clipCut();
-	fw.selection = sel;
-	dom.clipPaste();
-}else{
-	alert("You must select at lease one object!");
-}
+
+})();
