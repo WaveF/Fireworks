@@ -1,0 +1,28 @@
+// ===========================================================================
+//
+//	Toggle Half Opacity
+//
+//	Author - WaveF
+//
+// ===========================================================================
+
+try {
+
+(function(){
+	
+	if (fw.documents.length < 1 || fw.selection.length < 1) { return }
+
+	var dom	= fw.getDocumentDOM();
+	var targetOpacity = 50;
+
+	var setToTarget = (Math.round(fw.selection[0].opacity) != targetOpacity);
+
+	for (var i = 0; i < fw.selection.length; i++) {
+		fw.selection[i].opacity = setToTarget ? targetOpacity : 100;
+	}
+
+})();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}
