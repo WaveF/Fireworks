@@ -21,13 +21,13 @@ var selectOriginalObjects = false;
 		for(i in sel){
 			if(type){
 				dom.addNewRectanglePrimitive({left:sel[i].left, top:sel[i].top, right:sel[i].left+sel[i].width, bottom:sel[i].top+sel[i].height}, 0);
-				dom.ungroup();
+				// dom.ungroup();
 			}else{
 				dom.addNewOval({left:sel[i].left, top:sel[i].top, right:sel[i].left+sel[i].width, bottom:sel[i].top+sel[i].height});
 			}
 
 
-			dom.setFillColor("#00ACEE80");
+			dom.setFillColor("#FDE35B60");
 			dom.setBrushNColor(null, "#ffffff00");
 
 			newShapes.push(fw.selection[0]);
