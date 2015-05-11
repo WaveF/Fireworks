@@ -1,0 +1,29 @@
+// JavaScript for Fireworks
+// access the command through Commands > Solo
+// use 'Manage Saved Commands...' from Commands menu to delete existing commands
+
+try {
+
+	(function(){
+	
+		if(fw.documents.length<1) return;
+		
+		var symbolName = "_SoloSymbolMode_";
+		
+		if (!fw.getDocumentDOM().isSymbolDocument) {
+			if (fw.selection.length) {
+				fw.getDocumentDOM().convertToSymbol("graphic", symbolName, false);
+				fw.getDocumentDOM().editSymbol(fw.selection[0].symbolID);
+			}
+		}else{
+			fw.getDocumentDOM().exitSymbolEdit(1);
+			fw.getDocumentDOM().detachInstanceFromSymbol();
+			fw.getDocumentDOM().ungroup();
+			fw.getDocumentDOM().deleteSymbol(symbolName);
+		}
+		
+	})();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

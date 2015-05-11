@@ -1,0 +1,38 @@
+// JavaScript for Fireworks
+// access the command through Commands > AnimatedAngle
+// use 'Manage Saved Commands...' from Commands menu to delete existing commands
+
+(function(){
+	var sel = fw.selection?fw.selection:[];
+	if(sel.length!=1){ alert("Please select one object to process this command."); return }
+	
+	var i, step, angle;
+	
+	var originalName = fw.selection[0].name;
+	var newName = "_AnimatedObject_";
+	
+	step = prompt("Enter frame number of the animation:", 20);
+	if(!step) return;
+	
+	for(i=0; i<step; i++){
+		if(fw.selection[0]=="[object Group]") fw.getDocumentDOM().ungroup();
+		
+		angle = Math.round(i/step*360) - 180;
+		
+		fw.selection[0].effectList={ category: "Unused", effects: [{
+			EffectIsVisible: true,
+			EffectMoaID: "{8eeadf50-9efe-11da-a7460800200c9a66}",
+			category: "SpecialFill",
+			gradientFill: "1&0&1&100.000000&" + angle.toString() + "&100.000000&0.000000&0.000000&normal&angle&Two_Color,customStops,4096.000000$2$2,0$50$userStop$RGBColor;0.000000;0.000000;0.000000,4096$50$userStop$RGBColor;255.000000;255.000000;255.000000,100.000000$0$50,100.000000$4096$50",
+			name: "Photoshop Live Effects"
+		}], name: "Unused" };
+		
+		fw.getDocumentDOM().group("normal");
+		fw.selection[0].name = newName;
+		fw.getDocumentDOM().duplicateFrame(-1, 1, "after current", false);
+		fw.getDocumentDOM().setElementVisibleByName(newName, true);
+	}
+	
+	fw.getDocumentDOM().deleteFrames(step, 1);
+	
+})();

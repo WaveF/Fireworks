@@ -1,0 +1,30 @@
+// JavaScript for Fireworks
+// access the command through Commands > CopyColorValue
+// use 'Manage Saved Commands...' from Commands menu to delete existing commands
+
+(function(){
+	if(fw.documents.length<1) return;
+	if(fw.selection.length<1) return;
+	
+	var color = [];
+	
+	if(fw.selection.length>1){ alert("You have select more than one object, only the first object's color value will be copied."); }
+	
+	var el = fw.selection[0];
+	if(el.pathAttributes.fill.gradient){
+		var colorNodesNum = el.pathAttributes.fill.gradient.nodes.length;
+		for(var i=0; i<colorNodesNum; i++){
+			color.push(el.pathAttributes.fill.gradient.nodes[i].color);
+		}
+	}else{
+		color = el.pathAttributes.fillColor;
+	}
+	
+	fw.getDocumentDOM().addNewText({left:0, top:0, right:100, bottom:100}, true);
+	fw.selection[0].textChars = color.toString();
+	fw.selection[0].font = "courier";
+	fw.selection[0].fontsize = "12pt";
+	fw.selection[0].pathAttributes.fillColor = "#000000";
+	fw.getDocumentDOM().clipCut();
+	fw.selection = [el];
+})();
