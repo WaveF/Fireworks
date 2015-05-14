@@ -1,0 +1,6 @@
+var _alignment_storage_memory;
+if(!_alignment_storage_memory){
+	fw.getDocumentDOM().align("bottom", false);
+}else{
+	fw.getDocumentDOM().align("bottom", true);
+}

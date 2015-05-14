@@ -1,0 +1,199 @@
+var stage, _alignment_storage_memory;
+if(_alignment_storage_memory){
+	stage = true;
+}else{
+	stage = false;
+}
+var bounds = stage ? getDocumentSize() : getSelectionSize();
+
+function getDocumentSize() {
+	var doc = new Object();
+	doc.width = fw.getDocumentDOM().width;
+	doc.height = fw.getDocumentDOM().height;
+	doc.left = fw.getDocumentDOM().left;
+	doc.top = fw.getDocumentDOM().top;
+	doc.right = doc.left + doc.width;
+	doc.bottom = doc.top + doc.height;
+	doc.midX = doc.width / 2;
+	doc.midY = doc.height / 2;
+	doc.type = "doc";
+	return doc;
+}
+
+function getSelectionSize() {
+	if (isValidSelection()) {
+		var sel = new Object();
+		var selectBounds = fw.getDocumentDOM().getSelectionBounds();
+		sel.left = selectBounds.left;
+		sel.top = selectBounds.top;
+		sel.right = selectBounds.right;
+		sel.bottom = selectBounds.bottom;
+		sel.width = sel.right - sel.left;
+		sel.height = sel.bottom - sel.top;
+		sel.midX = sel.left + sel.width / 2;
+		sel.midY = sel.top + sel.height / 2;
+		sel.type = "selection";
+		return sel;
+	}
+}
+
+function isValidSelection() {
+	return (fw.selection.length > 0);
+}
+
+function moveObjectTo(x, y) {
+	fw.getDocumentDOM().moveSelectionTo({
+		x: Math.round(x),
+		y: Math.round(y)
+	}, false, false);
+}
+
+function Distribute(oB, sType) {
+	if (!isValidSelection()) return;
+	var origSel = ShortSelection(sType);
+	var newSel = new Array(origSel.length);
+	var items = origSel.length;
+	var sB = Shell(oB, origSel, sType);
+	var cD = CalcPositions(sB, items);
+	for (var i = 0; i < origSel.length; i++) {
+		fw.selection = [origSel[i]];
+		var el = new Obj(origSel[i]);
+		switch (sType) {
+			case "top":
+				moveObjectTo(el.x, cD[i]);
+				break;
+			case "bottom":
+				moveObjectTo(el.x, cD[i] - el.h);
+				break;
+			case "left":
+				moveObjectTo(cD[i], el.y);
+				break;
+			case "right":
+				moveObjectTo(cD[i] - el.w, el.y);
+				break;
+			case "horizcenter":
+				moveObjectTo(cD[i] - el.w / 2, el.y);
+				break;
+			case "vertcenter":
+				moveObjectTo(el.x, cD[i] - el.h / 2);
+				break;
+		}
+		newSel[i] = fw.selection[0];
+	}
+	fw.selection = newSel;
+}
+
+function Shell(oB, origSel, sType) {
+	var f = new Obj(origSel[0]);
+	var l = new Obj(origSel[origSel.length - 1]);
+	var s = new Object();
+	switch (sType) {
+		case "top":
+			s.start = oB.type == "doc" ? 0 : f.y;
+			s.offset = oB.type == "doc" ? oB.bottom - l.h : l.y - f.y;
+			return s;
+		case "bottom":
+			s.start = oB.type == "doc" ? oB.top + f.h : f.b;
+			s.offset = oB.type == "doc" ? oB.bottom - s.start : l.b - f.b;
+			return s;
+		case "left":
+			s.start = oB.type == "doc" ? 0 : f.x;
+			s.offset = oB.type == "doc" ? oB.right - l.w : l.x - f.x;
+			return s;
+		case "right":
+			s.start = oB.type == "doc" ? oB.left + f.w : f.r;
+			s.offset = oB.type == "doc" ? oB.right - s.start : l.r - f.r;
+			return s;
+		case "horizcenter":
+			s.start = oB.type == "doc" ? oB.left + f.w / 2 : f.cx;
+			s.offset = oB.type == "doc" ? oB.right - l.w / 2 - s.start : l.cx - f.cx;
+			return s;
+		case "vertcenter":
+			s.start = oB.type == "doc" ? oB.top + f.h / 2 : f.cy;
+			s.offset = oB.type == "doc" ? oB.bottom - l.h / 2 - s.start : l.cy - f.cy;
+			return s;
+		case "horizontal":
+			s.start = oB.left;
+			s.offset = oB.width;
+			return s;
+		case "vertical":
+			s.start = oB.top;
+			s.offset = oB.height;
+			return s;
+	}
+}
+
+function CalcPositions(sB, items) {
+	var c = new Array(items);
+	var delta = sB.offset / ((items == 1) ? items : items - 1);
+	for (var i = 0; i < items; i++) {
+		c[i] = sB.start + i * delta;
+	}
+	return c;
+}
+
+function Obj(sel) {
+	this.y = sel.top;
+	this.x = sel.left;
+	this.w = sel.width;
+	this.h = sel.height;
+	this.r = sel.left + sel.width;
+	this.b = sel.top + sel.height;
+	this.cx = sel.left + sel.width / 2;
+	this.cy = sel.top + sel.height / 2;
+}
+
+function ShortSelection(strType) {
+	var origSel = fw.selection;
+	var aElem = new Array(origSel.length);
+	for (var i = 0; i < origSel.length; i++) {
+		fw.selection = [origSel[i]];
+		aElem[i] = fw.selection[0];
+	}
+	switch (strType) {
+		case "top":
+			aElem.sort(CompareTop);
+			break;
+		case "left":
+			aElem.sort(CompareLeft);
+			break;
+		case "bottom":
+			aElem.sort(CompareBottom);
+			break;
+		case "right":
+			aElem.sort(CompareRight);
+			break;
+		case "vertcenter":
+			aElem.sort(CompareVertCenter);
+			break;
+		case "horizcenter":
+			aElem.sort(CompareHorizCenter);
+			break;
+	}
+	return aElem;
+}
+
+function CompareTop(a, b) {
+	return a.top - b.top;
+}
+
+function CompareLeft(a, b) {
+	return a.left - b.left;
+}
+
+function CompareBottom(a, b) {
+	return (a.top + a.height) - (b.top + b.height);
+}
+
+function CompareRight(a, b) {
+	return (a.left + a.width) - (b.left + b.width);
+}
+
+function CompareVertCenter(a, b) {
+	return (a.top + a.height / 2) - (b.top + b.height / 2);
+}
+
+function CompareHorizCenter(a, b) {
+	return (a.left + a.width / 2) - (b.left + b.width / 2);
+}
+Distribute(bounds, "vertcenter");

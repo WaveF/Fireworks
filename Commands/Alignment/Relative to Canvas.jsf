@@ -1,0 +1,3 @@
+var _alignment_storage_memory;
+
+_alignment_storage_memory = !_alignment_storage_memory;

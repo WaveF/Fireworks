@@ -1,0 +1,20 @@
+/* ===========================================================================
+//  Align to Center-Vertical (depend on first selection)
+//  
+//  Author: WaveF
+//  
+//  Website: miniCG.com
+//  
+// ===========================================================================*/
+
+var _alignment_storage_memory;
+
+if(_alignment_storage_memory){
+	fw.getDocumentDOM().align("center vertical", true);
+}else{
+	for(var i=0; i<fw.selection.length; i++){
+		if(i!=0){
+			fw.selection[i].left = fw.selection[0].left + (fw.selection[0].width-fw.selection[i].width)*.5;
+		}
+	}
+}
