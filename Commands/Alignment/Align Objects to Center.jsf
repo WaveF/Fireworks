@@ -1,5 +1,5 @@
 /* ===========================================================================
-//  Align to Center-Vertical (depend on first selection)
+//  Align to Center-Vertical
 //  
 //  Author: WaveF
 //  
@@ -12,9 +12,5 @@ var _alignment_storage_memory;
 if(_alignment_storage_memory){
 	fw.getDocumentDOM().align("center vertical", true);
 }else{
-	for(var i=0; i<fw.selection.length; i++){
-		if(i!=0){
-			fw.selection[i].left = fw.selection[0].left + (fw.selection[0].width-fw.selection[i].width)*.5;
-		}
-	}
+	fw.getDocumentDOM().align("center vertical", false);
 }
