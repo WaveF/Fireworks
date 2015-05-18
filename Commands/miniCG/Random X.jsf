@@ -1,5 +1,5 @@
 // "Random Height" command for Fireworks
-// access the command through Commands > UiWork > Random Height
+// access the command through Commands > miniCG > Random X
 // use 'Manage Saved Commands...' from Commands menu to delete existing commands
 
 var s = fw.selection;
@@ -9,7 +9,7 @@ var rnd = prompt("Random range:", 40);
 
 for(var i=0; i<s.length; i++){
   fw.selection = s[i];
-  fw.getDocumentDOM().setSelectionBounds({left:s[i].left, top:s[i].top+Math.floor(Math.random()*rnd), right:s[i].left+s[i].width, bottom:s[i].top+s[i].height}, "autoTrimImages transformAttributes");
+  s[i].left = s[i].left + Math.random()*80;
   ss.push(fw.selection[0]);
 }
 fw.selection = ss;

@@ -1,5 +1,5 @@
 // JavaScript for Fireworks
-// access the command through Commands > AnimatedAngle
+// access the command through Commands > miniCG > AnimatedAngle
 // use 'Manage Saved Commands...' from Commands menu to delete existing commands
 
 (function(){

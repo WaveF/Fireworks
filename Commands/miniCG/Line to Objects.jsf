@@ -1,0 +1,23 @@
+// "Line to Objects" command for Fireworks
+// access the command through Commands > miniCG > Line to Objects
+// use 'Manage Saved Commands...' from Commands menu to delete existing commands
+
+var sel = fw.selection;
+var startPoint = {};
+var endPoint = {};
+var newSel = [];
+
+for(var i=0; i<sel.length-1; i++){
+	startPoint.x = sel[i].left + sel[i].width*.5;
+	startPoint.y = sel[i].top + sel[i].height*.5;
+	endPoint.x = sel[i+1].left + sel[i+1].width*.5;
+	endPoint.y = sel[i+1].top + sel[i+1].height*.5;
+	
+	fw.getDocumentDOM().addNewLine(startPoint, endPoint);
+	
+	newSel.push(fw.selection[0]);
+}
+
+fw.selection = newSel;
+fw.getDocumentDOM().group("normal");
+fw.getDocumentDOM().setBrushNColor({ alphaRemap:"none", angle:0, antiAliased:true, aspect:100, blackness:0, category:"bc_Basic", concentration:100, dashOffSize1:2, dashOffSize2:2, dashOffSize3:2, dashOnSize1:10, dashOnSize2:1, dashOnSize3:1, diameter:4, feedback:"brush", flowRate:0, maxCount:14, minSize:1, name:"bn_Soft Rounded", numDashes:0, shape:"circle", softenMode:"bell curve", softness:0, spacing:6, textureBlend:0, textureEdge:0, tipColoringMode:"random", tipCount:1, tipSpacing:0, tipSpacingMode:"random", type:"simple" }, "#FDE35B");
