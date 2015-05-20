@@ -1,6 +1,6 @@
 ﻿var sel = fw.selection;
 var newSel = [];
-var copies = prompt("请输入复制次数：", "10");
+var copies = prompt("请输入克隆次数：", "10");
 
 newSel.push(sel[0]);
 
