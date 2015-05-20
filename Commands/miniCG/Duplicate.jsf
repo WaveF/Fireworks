@@ -1,10 +1,10 @@
 ﻿var sel = fw.selection;
 var newSel = [];
-var copies = prompt("请输入克隆次数：", "10");
+var copies = prompt("请输入克隆后的数量：", "10");
 
 newSel.push(sel[0]);
 
-for(var i=0; i<copies; i++){
+for(var i=0; i<copies-1; i++){
 	fw.getDocumentDOM().cloneSelection();
 	newSel.push(fw.selection[0]);
 }

@@ -8,7 +8,7 @@
   var s = fw.selection;
   if(s.length<1){return}
   if(s.length>1){dom.group("normal");s=fw.selection}
-  var userData = prompt("请依次输入横向、纵向的克隆次数与水平、垂直间距值，以逗号分隔：","6,4,10,10");
+  var userData = prompt("请依次输入横向、纵向的克隆后数量与水平、垂直间距值，以逗号分隔：","6,4,10,10");
   userData = userData.split(",");
 
   var newSel=[];
