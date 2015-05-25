@@ -1,0 +1,38 @@
+/* ===========================================================================
+	
+	File: L - Go Up
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 1.1.1 ($Revision: 1.7 $)
+	Last update - $Date: 2009/02/22 23:30:04 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+(function()
+{
+	if (typeof dojo == "undefined") { fw.runScript("lib/dojo/dojo.js"); }
+	dojo.require("fwlib.layers");
+
+	var dom	= fw.getDocumentDOM();
+	
+	var layers = new fwlib.layers.LayerTree();
+	var nextLayer = layers.getCurrentLayer().getLayerAbove();
+
+	while (nextLayer && (nextLayer.isVisible() == false 
+			|| nextLayer.isLocked() == true)) {
+		nextLayer = nextLayer.getLayerAbove();
+	}
+	
+	if (nextLayer) {
+		dom.currentLayerNum = nextLayer.index;
+	}
+})();

@@ -1,0 +1,37 @@
+/* ===========================================================================
+	
+	File: F - Export = On
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 1.1.1 ($Revision: 1.4 $)
+	Last update - $Date: 2009/02/22 23:30:02 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+(function()
+{
+	if (fw.documents.length == 0) {
+		return;
+	}
+
+	var dom	= fw.getDocumentDOM();
+	
+		// onionSkinBefore isn't always updated correctly, so if we're on the
+		// first frame, it may still be showing that we're onion skinning 2
+		// frames before the first one, so clip firstFrame to 0
+	var firstFrame = Math.max(0, dom.currentFrameNum - dom.onionSkinBefore);
+	var lastFrame = dom.currentFrameNum + dom.onionSkinAfter;
+	
+	for (var i = firstFrame; i <= lastFrame; i++) {
+		dom.frames[i].visible = true;
+	}
+})();

@@ -1,0 +1,27 @@
+/*		This script will copy guides of the current page		*/
+/*		Created by Sarthak Singhal								*/
+/*		For Adobe Fireworks CS3									*/
+
+try
+{
+
+	var verticalGuides = fw.getDocumentDOM().guides.vGuides;
+	var horizontalGuides = fw.getDocumentDOM().guides.hGuides;
+		
+	var vGuidesLength = verticalGuides.length;
+	var hGuidesLength = horizontalGuides.length;
+	
+	if (vGuidesLength == 0 && hGuidesLength ==0)
+		throw "NoGuidesErr";
+
+}
+catch(Err)
+{
+	if(Err == "NoGuidesErr")
+	{
+		alert("No Guides present on current page !");
+	}
+
+
+
+}

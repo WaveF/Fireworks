@@ -1,0 +1,320 @@
+/* 
+Fireworks JavaScript Command
+Exports slices as sprite sheets
+Install by copying to Fireworks/Configuration/Commands/ and accessing in Fireworks from the Commands menu
+Aaron Beall 2010-2011 - http://abeall.com
+Version 1.5.6
+
+*/
+
+var dom =  fw.getDocumentDOM(); // document object
+var sel = [].concat(fw.selection); // saved selection
+
+function ExportSprite() {
+	if (!dom)
+		return false;
+	
+	// User selected slices
+	var slices = [];
+	var i = sel.length;
+	while(i--)
+		if(sel[i] == "[object SliceHotspot]")
+			slices.push(sel[i])
+	
+	// If no slices selected, offer to export all slices on page
+	if(!slices.length){
+		// TODO: recursive into sublayers
+		// TODO: include hotspots?
+		
+		var allSlices = [];
+		for(var i = 0; i < dom.layers.length; i++){
+			if(dom.layers[i].layerType == "web"){
+				var e = dom.layers[i].frames[0].elements.length;
+				while(e--){
+					if(dom.layers[i].frames[0].elements[e] == "[object SliceHotspot]")
+						allSlices.push(dom.layers[i].frames[0].elements[e])
+				}
+			}
+		}
+		if(allSlices.length > 1 && !confirm("No slices selected; export all slices?"))
+			return false;
+		slices = allSlices;
+	}
+	
+	// No slices in document
+	if(!slices.length)
+		return alert("No slices on this page; cannot continue. This command is used to export slices and states into a single sprite image.");
+	
+	// Multiple slices or multiple frames required
+	if(slices.length == 1 && dom.frames.length == 1)
+		return alert("There is only one slice and one state; cannot continue. This command is used to export slices and states into a single sprite image. You must select more than one slice or have multiple states in the document.");
+	
+	// Multiple slices selected, choose to export as single sprite sheet or multiple sprite sheets for each slice
+	var multiSprites = false;
+	if(slices.length > 1 && dom.frames.length > 1)
+		multiSprites = !fw.yesNoDialog("Multiple slices are selected. Press YES to export all slices to a single sprite sheet image, press NO to export each slice as a separate sprite image.");
+	
+	// Multiple slices but only 1 frame, confirm single sprite sheet from slices
+	else if(slices.length > 1 && dom.frames.length == 1)
+		if(!confirm("This page has only one state; slices will be merged into a single sprite image."))
+			return false;
+		else
+			multiSprites = false;
+	
+	// Select save location
+	var dir, filePath;
+	if(!multiSprites)
+		filePath = fw.browseForFileURL("save");
+	else
+		dir = fw.browseForFolderURL("Select export directory for sprite images", dom.lastExportDirectory || Files.getDirectory(dom.lastExportFile));
+	if(!dir && !filePath)
+		return false;
+		
+	if(!filePath)
+		filePath = dir + "/" + (dom.docTitleWithoutExtension || "Untitled")
+	else if(!dir)
+		dir = Files.getDirectory(filePath);
+	
+	// Save app state
+	var oldFrameNum = dom.currentFrameNum;
+	
+	// Export all slices and frames to temp files
+	var sliceFiles = [], sliceNameNum = 1;
+	for(var i = 0; i < slices.length; i++){
+		var file = {
+			width:slices[i].width,
+			height:slices[i].height,
+			exportOptions:slices[i].exportOptions || dom.exportOptions,
+			name:slices[i].baseName || ("Slice" + sliceNameNum++),
+			frames:[]
+		}
+		sliceFiles.push(file);
+		
+		var opts = {};//new ExportOptions();
+		opts.exportFormat = "PNG";
+		opts.colorMode = "32 bit";
+		opts.crop = true;	
+		opts.cropLeft = slices[i].left - dom.left;
+		opts.cropRight = slices[i].left + slices[i].width - dom.left;
+		opts.cropTop = slices[i].top - dom.top;
+		opts.cropBottom = slices[i].top + slices[i].height - dom.top;
+		
+		for(var f = 0; f < dom.frames.length; f++){
+			dom.currentFrameNum = f;
+			//fw.selection = [slices[i]];
+			var tmp = Files.getTempFilePath(null) + "_" + i + "_" + f;
+			file.frames[f] = tmp + "." + opts.exportFormat;
+			fw.exportDocumentAs(dom, tmp, opts);
+		}
+	}
+	
+	// Generate sprite data
+	var sprites = [];
+	
+	// Create combined sprite image(s) and export them
+	if(multiSprites){
+		
+		// Export each slice as separate image file
+		for(var i = 0; i < sliceFiles.length; i++){
+			
+			// Create new document for current slice
+			var file = sliceFiles[i];
+			fw.createFireworksDocument({x:file.width, y:file.height * file.frames.length}, {pixelsPerUnit:72, units:"inch"}, dom.backgroundColor);
+			
+			// Create sprite data for this slice
+			var sprite = {name:getFilename(file.name), url:getFileURL(file.name, file.exportOptions), width:slices[i].width, height:slices[i].height, children:[]};
+			sprites.push(sprite);
+			
+			// Populate slice sprite images with state images
+			for(var f = 0; f < sliceFiles[i].frames.length; f++){
+				//alert(sliceFiles[i].frames[f])
+				fw.getDocumentDOM().importFile(sliceFiles[i].frames[f], {left:0, top:file.height * f, right:file.width, bottom:file.height * f + file.height}, false);
+				sprite.children.push({name:sliceFiles[i].name, state:dom.frames[f].name || f, index:f, x:-fw.selection[0].left, y:-fw.selection[0].top});
+			}
+			
+			// Export resulting image and return to doc
+			fw.getDocumentDOM().setExportOptions(dom.exportOptions);
+			fw.exportDocumentAs(fw.getDocumentDOM(), dir + "/" + file.name, file.exportOptions);
+			fw.getDocumentDOM().close(false);
+		}
+		
+	}else{
+		
+		// Exporting multiple slices as single image file
+		
+		// Create document covering total imaga area
+		var totalWidth = 0, totalHeight = 0;
+		for(var i in sliceFiles){
+			totalWidth += sliceFiles[i].width;
+			totalHeight = Math.max(sliceFiles[i].height * sliceFiles[i].frames.length, totalHeight);
+		}
+		fw.createFireworksDocument({x:totalWidth, y:totalHeight}, {pixelsPerUnit:72, units:"inch"}, dom.backgroundColor);
+		
+		// Create a single sprite data object
+		var sprite = {name:getFilename(filePath), url:getFileURL(filePath, dom.exportOptions), width:slices[0].width, height:slices[0].height, children:[]};
+		sprites = [sprite];
+		
+		// Populate sprite images
+		var currX = 0;
+		for(var i = 0; i < sliceFiles.length; i++){
+			var file = sliceFiles[i];
+			for(var f = 0; f < sliceFiles[i].frames.length; f++){
+				fw.getDocumentDOM().importFile(sliceFiles[i].frames[f], {left:currX, top:file.height * f, right:currX + file.width, bottom:file.height * f + file.height}, false);
+				sprite.children.push({name:sliceFiles[i].name, state:dom.frames[f].name, index:f, x:-fw.selection[0].left, y:-fw.selection[0].top});
+			}
+			currX += file.width;
+		}
+		
+		// Export resulting image and return to doc
+		fw.getDocumentDOM().setExportOptions(dom.exportOptions);
+		fw.exportDocumentAs(fw.getDocumentDOM(), filePath, dom.exportOptions);
+		fw.getDocumentDOM().close(false);
+	}
+	
+	function getFilename(url){
+		return url.split("/").pop().split("\\").pop().split(".").shift();
+	}
+	
+	function getFileURL(url, exportOptions){
+		var name = url.split("/").pop().split("\\").pop();
+		var extension = exportOptions.exportFormat.toLowerCase();
+		if(extension == "jpeg")
+			extension = "jpg";
+		if(name.indexOf("." + extension) != name.length - 1)
+			name += "." + extension;
+		return name;
+	}
+	
+	//alert(sprites.toSource().split("{").join("\n{"));
+	
+	// Render CSS
+	/*
+	#nav a { background-image:url("nav.jpg"); width:100px; height:25px; }
+	#nav a.homeBtn { background-position:0px 0px; }
+	#nav a:hover.homeBtn { background-position:0px -25px; }
+	#nav a.aboutBtn { background-position:-100px 0px; }
+	#nav a:hover.aboutBtn { background-position:-100px -25px; }
+	#nav a.galleryBtn { background-position:-200px 0px; }
+	#nav a:hover.galleryBtn { background-position:-200px -25px; }
+	*/
+	var ITEM_TAG = "a";
+	var css = "";
+	var containerID = multiSprites ? getFilename(filePath).split(".").shift() : sprites[0].name;
+	css += "#" + containerID + " " + ITEM_TAG + " { display:block; text-indent:-999px; }"
+	for(var i = 0; i < sprites.length; i++){
+		if(css.length)
+			css += "\n";
+		css += "#" + renderContainerName(containerID)
+			+ (multiSprites ? renderSpriteName(sprites[i], sprites[i].children[0]) : "")
+			+ " {"
+			+ " " + renderSpriteImage(sprites[i])
+			+ " }";
+		for(var j = 0; j < sprites[i].children.length; j++){
+			css += "\n#" + renderContainerName(containerID)
+				+ (renderSpriteName(sprites[i], sprites[i].children[j])) + " {"
+				+ " background-position:" + sprites[i].children[j].x + "px " + sprites[i].children[j].y + "px;"
+				+ " }";
+		}
+	}
+	
+	function renderContainerName(id){
+		return id + " " + ITEM_TAG;
+	}
+	
+	function renderSpriteName(spriteData, stateData){
+		// example: #nav a:hover.homeBtn
+		return (stateData ? "." + stateData.name : "")
+			+ (stateData && stateData.index > 0 ? ":" + stateData.state : "")
+	}
+	
+	function renderSpriteImage(sprite){
+		return "background-image:url('" + sprite.url + "');"
+			+ " width:" + sprite.width + "px;"
+			+ " height:" + sprite.height + "px;"
+	}
+	
+	// Render HTML
+	/*
+	<ul id="nav">
+		<li class="homeBtn">Home</li>
+		<li class="aboutBtn">About</li>
+		<li class="galleryBtn">Gallery</li>
+	</ul>
+	*/
+	var html = "";
+	if(multiSprites)
+		html += "<div id='" + containerID + "'>";
+	for(var i = 0; i < sprites.length; i++){
+		if(!multiSprites){
+			if(html.length)
+				html += "\n";
+			html += "<div id='" + sprites[i].name + "'>";
+		}
+		for(var j = 0; j < sprites[i].children.length; j++){
+			if(sprites[i].children[j].index == 0)
+				html += "\n\t<" + ITEM_TAG + " "
+					 + "href='#' " // TODO: use slice links
+					 + "class='" + sprites[i].children[j].name + "'"
+					 + ">" + sprites[i].children[j].name
+					 + "</" + ITEM_TAG + ">";
+		}
+		if(!multiSprites)
+			html += "\n</div>";
+	}
+	if(multiSprites)
+		html += "\n</div>";
+	
+	// Final output file
+	var output = "<style>"
+		+ "\n" + css
+		+ "\n</style>"
+		+ "\n\n" + html;
+	
+	// Copy CSS to clipboard
+	dom.clipCopyJsToExecute(output);
+	
+	// Write HTML and CSS output
+	if(fw.yesNoDialog("Create HTML and CSS File? \n(HTML and CSS has been copied to your clipboard.)")){
+		var outputFile;
+		/*if(filePath)
+			outputFile = Files.getDirectory(filePath) + "/" + Files.getFilename(filePath).split(".").shift() + ".html";
+		else
+			outputFile = dir + "/" + (dom.docTitleWithoutExtension || "Untitled") + ".html";*/
+		outputFile = dir + "/" + getFilename(filePath) + ".html";
+		
+		Files.deleteFileIfExisting(outputFile);
+		Files.createFile(outputFile, ".html", fw.appMacCreator);
+		var file = Files.open(outputFile, true);
+		if(file){
+			file.writeUTF8(output);
+			file.close();
+			alert("File created: " + outputFile)
+		}else{
+			return alert("ERROR: Unable to write file to disk.");
+		}
+	}
+	
+	// Delete temp files (good boy!)
+	for(var i = 0; i < sliceFiles.length; i++){
+		for(var f = 0; f < sliceFiles[i].frames.length; f++){
+			Files.deleteFile(sliceFiles[i].frames[f]);
+		}
+	}
+	
+	// Save export paths
+	/*if(filePath)
+		dom.lastExportFile = Files.getFilename(filePath);
+	else if(dir)
+		dom.lastExportDirectory = dir;*/
+	dom.lastExportFile = Files.getFilename(filePath);
+	dom.lastExportDirectory = dir;
+	//dom.filePathForSave = filePath;
+	
+	// Restore app state
+	fw.setActiveWindow(dom);
+	dom.currentFrameNum = oldFrameNum;
+}
+
+try{
+ExportSprite();
+}catch(e){alert([e.lineNumber, e, e.fileName])}

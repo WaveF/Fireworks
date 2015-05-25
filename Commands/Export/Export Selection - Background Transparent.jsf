@@ -1,0 +1,35 @@
+/* ===========================================================================
+	
+	File: Export Selection - Background Transparent
+
+	Author - John Dunning
+	Copyright - 2010 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 0.1.0 ($Revision: 1.1 $)
+	Last update - $Date: 2010/05/12 05:16:07 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try { (function() {
+		// store the current script name, as runScript below will change it
+	var filename = fw.currentScriptFileName;
+
+		// load our utility function, if needed
+	try { jdlib.exportSelection.call; } catch (exception)
+		{ fw.runScript(fw.currentScriptDir + "/Export Selection Utils.js"); }
+
+	jdlib.exportSelection(filename);
+})(); } catch (exception) {
+	if (exception.lineNumber) {
+		alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+	} else {
+		throw exception;
+	}
+}

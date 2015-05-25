@@ -1,0 +1,39 @@
+// Fireworks JavaScript Command
+// Copy to Fireworks/Configuration/Commands/
+// WaveF - http://miniCG.com
+// Version 1.0
+
+(function(){
+	var dom = fw.getDocumentDOM();
+	var sel = fw.selection;
+	
+	if(!sel) return;
+	if(sel.length<1) return;
+	
+	var reset = fw.yesNoDialog("Remove all word wrap first?");
+	var idx = prompt("Insert word wrap at:");
+	
+	for(var i=0; i<sel.length; i++){
+	
+		if(sel[i]=="[object Text]"){
+		
+			if(reset){
+				sel[i].textChars = sel[i].textChars.split('\r').join('');
+				sel[i].textChars = sel[i].textChars.split('\n').join('');
+			}
+			
+			var origTextChars = sel[i].textChars;
+			var newTextArray = [];
+			if(idx>sel[i].textChars.length) continue;
+			
+			for(var j=0; j<sel[i].textChars.length/idx; j++){
+				
+			}
+			
+		}
+		
+	}
+	
+	dom.changeCurrentPage(dom.currentPageNum);
+
+})();

@@ -1,5 +1,6 @@
 ﻿if(fw.getDocumentDOM()){};
 var sel = fw.selection;
+var newSel = [];
 
 if(sel.length == 0){
 	alert("你必须绘画/选择一个对象来作为参考");
@@ -9,9 +10,8 @@ if(sel.length == 0){
 		alert("所选参考对象多于1个，将采用第1个对象的尺寸进行参考");
 	}
 
-	fw.getDocumentDOM().setBrushNColor({ alphaRemap:"none", angle:0, antiAliased:true, aspect:100, blackness:0, category:"bc_Pencil", concentration:100, dashOffSize1:2, dashOffSize2:2, dashOffSize3:2, dashOnSize1:8, dashOnSize2:1, dashOnSize3:1, diameter:2, feedback:"brush", flowRate:0, maxCount:15, minSize:1, name:"bn_1-Pixel Anti-Aliased", numDashes:0, shape:"circle", softenMode:"bell curve", softness:0, spacing:15, textureBlend:0, textureEdge:0, tipColoringMode:"random", tipCount:1, tipSpacing:0, tipSpacingMode:"random", type:"simple" }, "#00bfff");
-	fw.getDocumentDOM().setFill(null);
-	fw.getDocumentDOM().setBrushPlacement("inside");
+	fw.selection = [fw.selection[0]];
+	fw.getDocumentDOM().cloneSelection();
 
 	for(var k=0; k<sel.length; k++){
 		if(k>0){
@@ -65,10 +65,15 @@ if(sel.length == 0){
 
 				for(var i=0; i<columnNum; i++){
 					fw.getDocumentDOM().addNewRectanglePrimitive({left:0, top:0, right:planParamsArray[userPlanID-1][0], bottom:maxHeight}, 0);
-					fw.getDocumentDOM().setFillNColor({ category:"fc_Solid", ditherColors:[ "#000000", "#000000" ], edgeType:"antialiased", feather:0, gradient:null, name:"fn_Normal", pattern:null, shape:"solid", stampingMode:"blend opaque", textureBlend:0, webDitherTransparent:false }, "#00bfff");
 					fw.getDocumentDOM().moveSelectionBy({x:initX+i*(planParamsArray[userPlanID-1][0]+planParamsArray[userPlanID-1][1]), y:initY}, false, false);
 					fw.getDocumentDOM().setOpacity(100);
+					fw.getDocumentDOM().setFillColor("#FDE35B60");
+					fw.getDocumentDOM().setBrushNColor(null, "#ffffff00");
+					newSel.push(fw.selection[0]);
 				}
+				fw.selection = newSel;
+				fw.getDocumentDOM().ungroup();
+				fw.getDocumentDOM().group("normal");
 			}
 		}else{
 			alert("无可用方案");

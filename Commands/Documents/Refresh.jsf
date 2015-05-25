@@ -1,0 +1,2 @@
+fw.getDocumentDOM().changeCurrentPage(fw.getDocumentDOM().currentPageNum);
+fw.getDocumentDOM().redraw();

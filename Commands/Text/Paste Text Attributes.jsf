@@ -1,0 +1,169 @@
+// Fireworks JavaScript Command
+// Copy to Fireworks/Configuration/Commands/
+// Aaron Beall 2007 - http://abeall.com
+// Version 1.1
+
+var dom = fw.getDocumentDOM(); // document object
+var sel = new Array().concat(fw.selection); // saved selection
+
+PasteTextAttrs();
+
+function PasteTextAttrs(){
+	
+	if(!sel.length) return false;
+	
+	dom.clipPaste("do not resample", "vector");
+	var copiedAttrs = CopyTextAttrs();
+	dom.deleteSelection(false);
+	fw.selection = sel;
+	
+	if(!copiedAttrs)
+		return alert("You must first copy some text.");
+		
+	//var copiedAttrs = fw.CopyPasteTextAttrs_clipboard;
+	
+	var origTextFields = [];
+	for (s in sel) {
+		if (sel[s] == '[object Text]' ) {
+			origTextFields.push(sel[s]);
+		}
+	}
+	if (!origTextFields.length) return false;
+	
+	/*if(!copiedAttrs){
+		alert('You must first perform \"Copy Text Attributes\" on a Text object before using this command.');
+		return false;
+	}*/
+	
+	var selIndex = fw.textInsertionIndex;
+	var selLength = fw.textInsertionLength;
+	
+	if(selIndex = -1){
+		for(t in origTextFields){
+			for(var i in copiedAttrs.props){
+				origTextFields[t][i] = copiedAttrs.props[i];
+			}
+			var r = origTextFields[t].textRuns;
+			r.initialAttrs = copiedAttrs.initialAttrs;
+			origTextFields[t].textRuns = r;
+		}
+	}else{
+		if(selLength == 0)
+			return alert("Select some text before using this command.");
+			
+		var attrs = {};
+		for(var a in fw.selection[0].textRuns.initialAttrs)
+			attrs[a] = fw.selection[0].textRuns.initialAttrs[a];
+		
+		var newRuns = {};
+		newRuns.initialAttrs = {};
+		for(var a in attrs)
+			newRuns.initialAttrs[a] = attrs[a];
+		newRuns.textRuns = [];
+		
+		var runs = fw.selection[0].textRuns, charCount = 0, run, newRun;
+		for(var r=0; r<runs.textRuns.length; r++){
+			run = runs.textRuns[r];
+			//alert(charCount+" + "+String(run.characters).length)
+			charCount += String(run.characters).length;
+			
+			//alert(selIndex+"-"+selLength+" / "+charCount);
+			
+			// add new text run
+			newRuns.textRuns.push({characters:run.characters,changedAttrs:run.changedAttrs});
+			newRun = newRuns.textRuns[newRuns.textRuns.length-1];
+			for(var a in run.changedAttrs)
+				attrs[a] = run.changedAttrs[a];
+			for(var a in attrs)
+				newRun.changedAttrs[a] = attrs[a];
+			//alert(run.characters);
+			//dump(attrs);
+			
+			// paste text attributes if in a new text run within the text selection
+			if(charCount-run.characters.length >= selIndex  & charCount-run.characters.length < selIndex+selLength){
+				for(var a in copiedAttrs.initialAttrs)
+					newRun.changedAttrs[a] = copiedAttrs.initialAttrs[a];
+			}
+			
+			// the text run which contains the selection start index
+			if(charCount >= selIndex && charCount-run.characters.length <= selIndex){
+				//alert('start')
+				// grab all text before selection point
+				newRun.characters = run.characters.substring(0,selIndex - (charCount - run.characters.length));
+				
+				// grab all text starting at selection point and beyond
+				newRuns.textRuns.push({characters:"",changedAttrs:{}});
+				newRun = newRuns.textRuns[newRuns.textRuns.length-1];
+				newRun.characters = run.characters.substring(selIndex - (charCount - run.characters.length),Math.min(run.characters.length,selIndex + selLength - (charCount - run.characters.length)));
+				newRun.changedAttrs = {};
+				for(var a in copiedAttrs.initialAttrs)
+					newRun.changedAttrs[a] = copiedAttrs.initialAttrs[a];
+			}
+			
+			// the text run which contains the selection ending index
+			if(charCount >= selIndex+selLength && charCount-run.characters.length < selIndex+selLength){
+				//alert('end')
+				// grab all text before end selection point
+				if(charCount - run.characters.length > selIndex){
+					// only if this is a different text run than the text run with the starting selection index
+					newRun.characters = run.characters.substring(0, selIndex + selLength - (charCount - run.characters.length));
+					newRun.changedAttrs = {};
+					//for(var a in copiedAttrs.initialAttrs)
+						//newRun.changedAttrs[a] = copiedAttrs.initialAttrs[a];
+				}
+				
+				// grab all text starting at end selection point and beyond
+				newRuns.textRuns.push({characters:"",changedAttrs:{}});
+				newRun = newRuns.textRuns[newRuns.textRuns.length-1];
+				newRun.characters = run.characters.substr(selIndex + selLength - (charCount - run.characters.length));
+				newRun.changedAttrs = {};
+				for(var a in attrs)
+					newRun.changedAttrs[a] = attrs[a];
+			}
+		}
+		fw.selection[0].textRuns = newRuns;
+	}
+	
+	return true;
+}
+
+function CopyTextAttrs() {
+	
+	var sel = fw.selection;
+	
+	if (!sel.length) return false;
+	
+	for (s in sel) {
+		if (sel[s] == '[object Text]' ) {
+			var c = fw.CopyPasteTextAttrs_clipboard = {};
+			c.props = {};
+			c.props.antiAliasMode = sel[s].antiAliasMode;
+			c.props.antiAliased = sel[s].antiAliased;
+			c.props.autoKern = sel[s].autoKern;
+			c.props.orientation = sel[s].orientation;
+			c.initialAttrs = {};
+			for(var i in sel[s].textRuns.initialAttrs)
+				c.initialAttrs[i] = sel[s].textRuns.initialAttrs[i];
+			
+			var selIndex = fw.textInsertionIndex, charCount = 0;
+			for(var r=0; r<sel[s].textRuns.textRuns.length; r++){
+				for(var a in sel[s].textRuns.textRuns[r].changedAttrs)
+					c.initialAttrs[a] = sel[s].textRuns.textRuns[r].changedAttrs[a];
+				charCount += sel[s].textRuns.textRuns[r].characters.length;
+				//alert(charCount+": "+sel[s].textRuns.textRuns[r].characters);
+				if(charCount >= selIndex)
+					break;
+			}
+			break;
+		}
+	}
+	
+	return fw.CopyPasteTextAttrs_clipboard;
+}
+
+function dump(obj){
+	var str = "";
+	for(var i in obj)
+		str += i+": "+obj[i]+"\n";
+	alert(str);
+}

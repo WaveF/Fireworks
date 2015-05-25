@@ -1,0 +1,69 @@
+/* ===========================================================================
+	
+	File: L - Copy to Next Doc
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 1.1.1 ($Revision: 1.7 $)
+	Last update - $Date: 2009/02/22 23:30:04 $
+
+   ======================================================================== */
+
+/*
+	- copying the web layer by itself doesn't work
+	 
+	- sublayers are a huge freaking hassle
+		why doesn't copying the parent layer copy all of its children?  ffs
+		
+	- can't reliably find a newly added sublayer by name because it will have a 1 appended to it
+	
+	- copying a layer with sublayers to doc that already has the same layer causes error 
+*/
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function()
+{
+	if (fw.documents.length < 2) {
+		alert("This command copies the current layer to the next document. It requires that at least 2 documents be open at the same time.");
+		return;
+	}
+
+	if (typeof dojo == "undefined") { fw.runScript(fw.currentScriptDir + "/lib/lib.js"); }
+	dojo.require("fwlib.layers");
+
+	var dom	= fw.getDocumentDOM();
+	
+		// store the current selection so we can restore it when we're done
+	var originalSelection = [].concat(fw.selection);
+	
+	var sourceLayerIndex = fwlib.layers.getTopAncestorLayerIndex(dom.currentLayerNum);
+
+	var tree = new fwlib.layers.LayerTree();
+	var sourceLayer = tree.getLayerByIndex(sourceLayerIndex);
+	
+		// find the next open document
+	var targetDoc = fwlib.layers.getNextDocument(dom);
+	
+	if (!targetDoc) {
+			// for some reason, we couldn't find another unique document
+		return;
+	}
+
+	fwlib.layers.copyLayer(sourceLayer, targetDoc);
+
+		// restore the selection in the source doc
+	fw.selection = originalSelection;
+})();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

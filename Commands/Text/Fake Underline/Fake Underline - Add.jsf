@@ -1,0 +1,118 @@
+/* ===========================================================================
+	
+	File: Fake Underline - Add
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 0.1.1 ($Revision: 1.2 $)
+	Last update - $Date: 2009/02/23 01:24:47 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function()
+{
+	if (fw.selection.length < 1) {
+		return;
+	}
+
+	if (typeof dojo == "undefined") { fw.runScript(fw.currentScriptDir + "/lib/lib.js"); }
+	dojo.require("fwlib.util.pngText");
+
+	var dom = fw.getDocumentDOM();
+	var originalSelection = [].concat(fw.selection);
+	
+	var underlinePrefs = fwlib.util.getPngTextData(
+		"jdlib.FakeUnderline",
+		{
+			lineOffset: 2,
+			pathAttributes: null
+		}
+	);
+
+	underlinePrefs.pathAttributes = underlinePrefs.pathAttributes || dom.pathAttributes;
+
+	if (!underlinePrefs.pathAttributes.brush) {
+			// there's no underline style saved with this doc and the current 
+			// brush type is null, so tell the user they have to first create a line
+		alert('To add a fake underline, you must first create a line, select it, and then run "Fake Underline - Set Style from Selection".');
+		return;
+	}
+	
+	var lineOffset = underlinePrefs.lineOffset;
+	var brushSize = underlinePrefs.pathAttributes.brush.diameter;
+	var lineXAdjustment = Math.floor(brushSize / 2);
+	
+	for (var i = 0, len = originalSelection.length; i < len; i++) {
+		var element = originalSelection[i];
+		
+		if (element.elements) {
+			var subElements = element.elements;
+
+			if (subElements.length != 2 || !subElements[1].textRuns || 
+					!subElements[0].contours || subElements[0].contours[0].nodes.length != 2) {
+					// this isn't the right type of group, so skip it
+				continue;
+			}
+		} else if (!element.textRuns) {
+			continue;
+		}
+		
+		if (element.elements) {
+			fw.selection = [element];
+			dom.ungroup();
+			
+				// the text block is the second element in the group
+			element = fw.selection[1];
+			
+				// delete the line, which we'll re-add below
+			fw.selection = fw.selection[0];
+			dom.deleteSelection(false);
+		}
+
+			// select just the text element
+		fw.selection = [element];
+		
+			// clone the text and turn it into a bitmap so we can measure it
+		dom.cloneSelection();
+		dom.flattenSelection();
+		var bitmapText = fw.selection[0];
+		
+		var lineX = bitmapText.left + lineXAdjustment;
+		var lineY = bitmapText.top + bitmapText.height + lineOffset;
+		var lineWidth = bitmapText.width - brushSize;
+		
+			// delete the bitmap text object, since we're done measuring
+		dom.deleteSelection(false);
+		
+		dom.addNewLine({ x: lineX, y: lineY }, { x: lineX + lineWidth, y: lineY });
+		var line = fw.selection[0];
+		
+		if (underlinePrefs.pathAttributes) {
+			for (var key in line.pathAttributes) {
+				line.pathAttributes[key] = underlinePrefs.pathAttributes[key];
+			}
+		}
+		
+			// group the text block and the line
+		fw.selection = [element, fw.selection[0]];
+		dom.group();
+		
+		originalSelection[i] = fw.selection[0];
+	}
+
+	fw.selection = originalSelection;
+})()
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

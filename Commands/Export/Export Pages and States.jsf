@@ -1,0 +1,115 @@
+// Fireworks JavaScript Command
+// Exports all Pages and Frames to files
+// Install by copying to Fireworks/Configuration/Commands/
+// Run in Fireworks via the Commands menu
+// Aaron Beall 2008-2011 - http://abeall.com
+// Version 1.3.1
+
+/* 
+BUGS
+- [FIXED-v1.3] does not return to original page when completed
+- [FIXED-v1.2] if remembered dir no longer exists, command exits before allowing a new dir to be selected
+
+TODO
+- have the frame omitter also work in cases where a page has multiple frames, but all but one frame is set to invisible (so only 1 frame exports)
+- check for existing file before save, and on first conflict prompt to overwrite existing files
+- if filename contains invalid characters, prompt first time for replacement char rather than always use space
+*/
+
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+function ExportPagesAndFrames() {
+	// require active document
+	if (!dom) return false;
+	
+	// save current document position
+	var oldPageNum = dom.currentPageNum;
+	var oldFrameNum = dom.currentFrameNum;
+	function restoreDoc(){
+		fw.getDocumentDOM().changeCurrentPage(oldPageNum);
+		fw.getDocumentDOM().currentFrameNum = oldFrameNum;
+	}
+	
+	// move to page 1, this is so that remembered values saved to pngText are always saved to page 1 and remembered no matter what page you are on
+	dom.changeCurrentPage(0);
+	dom = fw.getDocumentDOM();
+	
+	// user naming input
+	var PAGE_NAME_TOKEN = '%p', PAGE_NUM_TOKEN = '%pn', FRAME_NAME_TOKEN = '%s', FRAME_NUM_TOKEN = '%sn', FRAME_OMIT_TOKEN = '|';
+	var DEFAULT_INPUT = PAGE_NUM_TOKEN + ' ' + PAGE_NAME_TOKEN + FRAME_OMIT_TOKEN + ' - ' + FRAME_NUM_TOKEN + ' ' + FRAME_NAME_TOKEN;
+	var msg = 'Create a file name schema:\n'
+		+ PAGE_NAME_TOKEN + ' and ' + PAGE_NUM_TOKEN + ' for page name and number\n'
+		+ FRAME_NAME_TOKEN + ' and ' + FRAME_NUM_TOKEN + ' for state name and number\n'
+		+ 'Use ' + FRAME_OMIT_TOKEN + ' to omit following text for single-state pages';
+	var input = prompt(msg, dom.pngText.ExportPagesAndFrames_input || fw.getPref("ExportPagesAndFrames_input") || DEFAULT_INPUT);
+	if(input == null) return restoreDoc();
+	dom.pngText.ExportPagesAndFrames_input = input;
+	fw.setPref("ExportPagesAndFrames_input", input);
+	
+	// select output dir
+	var dir;
+	var lastDir = dom.pngText.ExportPagesAndFrames_lastExportDirectory || dom.lastExportDirectory || Files.getDirectory(dom.filePathForSave) || null;
+	var dir = fw.browseForFolderURL("Export Pages and States", Files.exists(lastDir) ? lastDir : null);
+	if(!dir) return restoreDoc();
+	dom.pngText.ExportPagesAndFrames_lastExportDirectory = dir;
+	
+	// export all pages and frames
+	for(var p = 0; p < dom.pagesCount; p++){
+		
+		// page
+		dom.changeCurrentPage(p);
+		dom = fw.getDocumentDOM();
+		var filenameP = input;
+		filenameP = filenameP.split(PAGE_NUM_TOKEN).join(leadingZeros(p + 1, dom.pagesCount));
+		filenameP = filenameP.split(PAGE_NAME_TOKEN).join(dom.pageName);
+		
+		// frames
+		for(var f = 0; f < dom.frameCount; f++){
+			dom.currentFrameNum = f;
+			if(!dom.frames[f].visible) continue;
+			var filenameF = filenameP;
+			filenameF = filenameF.split(FRAME_NUM_TOKEN).join(leadingZeros(f + 1, dom.frameCount));
+			filenameF = filenameF.split(FRAME_NAME_TOKEN).join(dom.frames[f].name);
+			
+			// omit part of filename if there's only 1 frame
+			if(filenameF.indexOf(FRAME_OMIT_TOKEN) != -1){
+				if(dom.frameCount == 1)
+					filenameF = filenameF.substring(0, filenameF.indexOf(FRAME_OMIT_TOKEN));
+				else
+					filenameF = filenameF.replace(FRAME_OMIT_TOKEN, "");
+			}
+			
+			// clean filename for export
+			filenameF = cleanFileURL(filenameF);
+			
+			// export
+			fw.exportDocumentAs(null, dir + "/" + filenameF, null);
+		}
+	}
+	
+	// restore old document position
+	restoreDoc();
+}
+
+// add leading zeros to a number based on how big the the highest number (total) will be
+function leadingZeros(num,total){
+	num = String(num);
+	while(num.length < String(total).length)
+		num = "0" + num;
+	return num;
+}
+
+// remove invalid filename chars
+function cleanFileURL(str, replaceChar){
+	if(!replaceChar) replaceChar = "-";
+	var chars = ['\\','/',':','*','?','"','<','>','|'];
+	for(var i in chars)
+		str = str.replace(chars[i], replaceChar);
+	return str;
+}
+
+// run command
+//try{
+ExportPagesAndFrames();
+//}catch(e){alert([e, e.lineNumber, e.fileName].join("\n"));}

@@ -1,0 +1,34 @@
+/* ===========================================================================
+
+	Generate Web Assets - Change Export Location.jsf
+
+	Copyright (c) 2013 John Dunning.  All rights reserved.
+	fw@johndunning.com
+	http://johndunning.com/fireworks
+
+   ======================================================================== */
+
+
+// ===========================================================================
+(function() {
+
+var currentScriptDir = fw.currentScriptDir;
+
+if (typeof require != "function" || !require.version) {
+	fw.runScript(fw.currentScriptDir + "/Generate Web Assets/fwrequire.js"); }
+
+
+require({ contextPath: currentScriptDir + "/Generate Web Assets", baseUrl: "." }, [
+	"export/web-assets"
+], function(
+	WebAssets
+) {
+	var dom = fw.getDocumentDOM(),
+		exportPath = WebAssets.getExportPath(dom, true);
+
+	if (dom && exportPath) {
+		WebAssets.exportState(dom);
+	}
+});
+
+})();

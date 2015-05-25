@@ -1,0 +1,297 @@
+/*
+Fireworks CS5 JavaScript Command
+Exports styles panel items as css definitions
+Install by copying to Fireworks/Configuration/Commands/
+Aaron Beall 2011 - http://abeall.com
+Version 1.1.1
+
+TODO:
+- [DONE-v1.1.0] support gradient fills
+- [DONE-v1.1.0] support pattern fills
+- - prompt to export background images
+- support filters: box-shadow, text-shadow
+*/
+
+var dom = fw.getDocumentDOM();
+var sel = [].concat(fw.selection);
+
+function ExportStylesAsCSS() {
+	
+	if(!fw.styles.length)
+		return alert("There are no styles to export. You must have styles in your Styles panel for this command to export to a CSS file.");
+	
+	var NEWLINE = "\n";
+	var INDENT = "\t";
+	var TAGS = ("html,body,h1,h2,h3,h4,h5,h6,p,a,strong,em,br,hr,blockquote,big,small,dd,dl,dt,fieldset,form,img,input,label,ul,ol,li,span,sub,sup,table,td,th,tr,tt").split(",");
+	var VENDORS = ("moz,webkit,o,ms").split(",");
+	
+	// Convert styles panel to CSS
+	var docTitle = Files.getFilename(dom.filePathForSave) || dom.docTitleWithoutExtension || "Untitled";
+	var cssOutput = "/* CSS generated from Adobe Fireworks document: " + docTitle + "*/";
+	var patterns = {};
+	var styles = fw.styles;
+	for(var s = 0; s < styles.length; s++){
+		
+		var style = styles[s];
+		var styleOutput = renderSelectorName(style.name) + " {";
+		
+		if(style.use_textStyles){
+			
+			if(style.use_fillColor && style.pathAttributes.fill)
+				styleOutput += NEWLINE + INDENT + "color: " + style.pathAttributes.fillColor + ";";
+			if(style.use_textFont)
+				styleOutput += NEWLINE + INDENT + "font-family: " + fw.getFamilyNameForPSFont(style.textFont) + ";";
+			if(style.use_textSize)
+				styleOutput += NEWLINE + INDENT + "text-size: " + style.textSize.replace(/pt/, "px") + ";";
+			if(style.use_textStyles && style.textBold)
+				styleOutput += NEWLINE + INDENT + "font-weight: bold;";
+			if(style.use_textStyles && style.textUnderline)
+				styleOutput += NEWLINE + INDENT + "text-decoration: underline;";
+			if(style.use_textStyles && style.textItalic)
+				styleOutput += NEWLINE + INDENT + "text-style: italic;";
+			
+		}else{
+			
+			if(style.use_fillColor && style.pathAttributes.fill)
+				styleOutput += NEWLINE + INDENT + "background-color: " + style.pathAttributes.fillColor + ";";
+			if(style.use_brushColor && style.pathAttributes.brush)
+				styleOutput += NEWLINE + INDENT + "border-color: " + style.pathAttributes.brushColor + ";";
+			if(style.use_brush && style.pathAttributes.brush && style.pathAttributes.brush.numDashes)
+				styleOutput += NEWLINE + INDENT + "border-style: dashed;";
+			if(style.use_brush && style.pathAttributes.brush && style.pathAttributes.brush.diameter)
+				styleOutput += NEWLINE + INDENT + "border-width: " + style.pathAttributes.brush.diameter + "px;";
+			if(style.use_fill && style.pathAttributes.fill){
+				
+				if(style.pathAttributes.fill.gradient){
+					
+					// gradient
+					var gradient = style.pathAttributes.fill.gradient;
+					var mergedNodes = flattenGradient(gradient);
+					
+					// render gradient css
+					var shape = style.pathAttributes.fill.shape;
+					var cssGradient = (shape == "radial" || shape == "elliptical" ? "radial-gradient" : "linear-gradient") + "(";
+					for(var i = 0; i < mergedNodes.length; i++)
+						cssGradient += (i > 0 ? ", " : "") + renderRGBA(hexToRGBA(mergedNodes[i].color)) + " " + renderPercent(mergedNodes[i].position);
+					cssGradient += ");";
+					
+					// render standard css
+					styleOutput += NEWLINE + INDENT + "background-image: " + cssGradient;
+					
+					// render vendor css
+					for(var i = 0; i < VENDORS.length; i++)
+						styleOutput += NEWLINE + INDENT + "background-image: -" + VENDORS[i] + "-" + cssGradient; 
+					
+				}else if(style.pathAttributes.fill.pattern){
+					
+					// pattern
+					var pattern = style.pathAttributes.fill.pattern;
+					var name = pattern.name.split("\\").pop().split("/").pop().split(".").shift().replace(/[\W]/g, "_");
+					
+					// create pattern image proxy
+					if(!patterns[name]){
+						dom.addNewRectanglePrimitive({left:0, top:0, right:100, bottom:100}, 0);
+						dom.applyStyle(style.name, 0);
+						var fill = fw.selection[0].pathAttributes.fill;
+						fill.textureBlend = 0;
+						fill.feather = 0;
+						dom.setFill(fill);
+						dom.setBrush(null);
+						dom.setDefaultFillVector();
+						var pathAttrs = fw.selection[0].pathAttributes;
+						dom.setRectSides({left:pathAttrs.fillHandle3.x, top:pathAttrs.fillHandle3.y, right:pathAttrs.fillHandle2.x, bottom:pathAttrs.fillHandle2.y});
+						dom.setElementName(name);
+						patterns[name] = fw.selection[0];
+					}
+					
+					styleOutput += NEWLINE + INDENT + "background-image: url('" + name + ".png')"; 
+				}
+			}
+		}
+		
+		styleOutput += NEWLINE + "}"
+		
+		cssOutput += NEWLINE + styleOutput
+	}
+	
+	// Copy to clipboard
+	//alert(cssOutput);
+	dom.clipCopyJsToExecute(cssOutput);
+	
+	// Set save dialog start location if possible
+	var lastDir = dom.lastExportDirectory || Files.makePathFromDirAndFile(fw.getPref("LastExportStylesAsCSSLocation"), "");
+	var filePathForSave = dom.filePathForSave;
+	if(Files.exists(lastDir))
+		dom.filePathForSave = lastDir;
+	
+	// Save dialog
+	var fileURL = fw.browseForFileURL("save", "Create CSS file (cancel to copy to clipboard)");
+	var dirURL = Files.getDirectory(fileURL);
+	
+	// Restore file path for save
+	if(filePathForSave)
+		dom.filePathForSave = filePathForSave;
+	
+	if(fileURL){
+		
+		if(fileURL.toLowerCase().substr(-4) != ".css")
+			fileURL += ".css";
+		
+		Files.deleteFileIfExisting(fileURL);
+		Files.createFile(fileURL, ".css", fw.appMacCreator);
+		var file = Files.open(fileURL, true);
+		if(file){
+			file.writeUTF8(cssOutput);
+			file.close();
+			
+			// export any patterns
+			for(var i in patterns){
+				if(!patterns.hasOwnProperty(i)) continue;
+				fw.selection = patterns[i];
+				dom.clipCut();
+				fw.createDocument();
+				dom = fw.getDocumentDOM();
+				dom.clipPaste("do not resample", "vector");
+				dom.setDocumentCanvasSizeToDocumentExtents(true);
+				dom.setExportOptions({animAutoCrop:true, animAutoDifference:true, applyScale:false, colorMode:"32 bit", crop:false, cropBottom:0, cropLeft:0, cropRight:0, cropTop:0, ditherMode:"none", ditherPercent:100, exportFormat:"PNG", frameInfo:[], interlacedGIF:false, jpegQuality:100, jpegSelPreserveButtons:false, jpegSelPreserveText:true, jpegSelQuality:100, jpegSelQualityEnabled:false, jpegSmoothness:0, jpegSubsampling:0, localAdaptive:true, lossyGifAmount:0, macCreator:"", macFileType:"", name:null, numCustomEntries:0, numEntriesRequested:0, numGridEntries:6, optimized:true, paletteEntries:null, paletteInfo:null, paletteMode:"adaptive", paletteTransparency:"none", percentScale:100, progressiveJPEG:false, savedAnimationRepeat:0, sorting:"none", useScale:true, webSnapAdaptive:false, webSnapTolerance:14, xSize:0, ySize:0});
+				fw.exportDocumentAs(dom, dirURL + "/" + patterns[i].name + ".png", null);
+				dom.close(false);
+				dom = fw.getDocumentDOM();
+			}
+		}else{
+			return alert("ERROR: Unable to write file to disk. CSS has been copied to your clipboard");
+		}
+		dom.lastExportFile = Files.getFilename(fileURL);
+		dom.lastExportDirectory = Files.getDirectory(fileURL);
+		fw.setPref("LastExportStylesAsCSSLocation", dom.lastExportDirectory)
+	}else{
+		alert("CSS has been copied to your clipboard.");
+	}
+	
+	return true;
+	
+	function renderSelectorName(str){
+		
+		// ID or class selector
+		if(str.indexOf("#") == 0 || str.indexOf(".") == 0)
+			return str;
+		
+		// Tag selector
+		var name = str.toLowerCase(), len = TAGS.length;
+		for(var i = 0; i < len; i++)
+			if(name.indexOf(TAGS[i]) == 0)
+				return str;
+				
+		// Class selector
+		return "." + str.replace(/\W/g, "");
+	}
+	
+	function flattenGradient(gradient){
+		// combine color and opacity nodes and sort by position
+		var nodes = [].concat(gradient.nodes, gradient.opacityNodes);
+		nodes.sort(function(a, b){return a.position - b.position});
+		
+		// build merged nodes, isolating rgb and opacity
+		var mergedNodes = [], node, prevNode = null;
+		for(var i = 0; i < nodes.length; i++){
+			node = nodes[i];
+			if(prevNode && prevNode.position == node.position)
+				node.isOpacityNode ? prevNode.opacity = node.color : prevNode.rgb = node.color;
+			else{
+				var newNode = {position:node.position};
+				node.isOpacityNode ? newNode.opacity = node.color : newNode.rgb = node.color;
+				mergedNodes.push(newNode);
+				prevNode = newNode;
+			}
+		}
+		
+		// merge rgb+opacity into color, interpolate any needed rgb/a values
+		for(var i = 0; i < mergedNodes.length; i++){
+			var node = mergedNodes[i];
+			if(node.rgb == null)
+				node.rgb = interpolateNodeColor(mergedNodes, "rgb", i, node.position);
+			if(node.opacity == null)
+				node.opacity = interpolateNodeColor(mergedNodes, "opacity", i, node.position);
+			node.color = node.rgb.substr(0, 7) + node.opacity.substr(7);
+		}
+		
+		return mergedNodes;
+	}
+	
+	function interpolateNodeColor(nodes, type, index, position){
+		
+		// find previous/next nodes
+		var prevNode = null, nextNode = null;
+		for(var i = index; i >= 0; i--)
+			if(nodes[i][type] != null){
+				prevNode = nodes[i];
+				break;
+			}
+		for(var i = index; i < nodes.length; i++)
+			if(nodes[i][type] != null){
+				nextNode = nodes[i];
+				break;
+			}
+		
+		// if index is beyond first/last target type node, no interpolation needed, just use the closest node
+		// (this assumes that a gradient has at least 2 color and 2 opacity nodes, which is required in FW)
+		if(!prevNode)
+			for(var i = index; i < nodes.length; i++)
+				if(nodes[i][type] != null)
+					return rgbaHEX(nodes[i][type]);
+		if(!nextNode)
+			for(var i = index; i >= 0; i--)
+				if(nodes[i][type] != null)
+					return rgbaHEX(nodes[i][type]);
+		
+		// interpolate RGBA
+		var prevPos = prevNode.position;
+		var nextPos = nextNode.position;
+		var prevRGBA = hexToRGBA(prevNode[type]);
+		var nextRGBA = hexToRGBA(nextNode[type]);
+		var percent = (position - prevPos) / (nextPos - prevPos);
+		var output = rgbaToHEX({
+			r:prevRGBA.r + (nextRGBA.r - prevRGBA.r) * percent,
+			g:prevRGBA.g + (nextRGBA.g - prevRGBA.g) * percent,
+			b:prevRGBA.b + (nextRGBA.b - prevRGBA.b) * percent,
+			a:prevRGBA.a + (nextRGBA.a - prevRGBA.a) * percent
+		});
+		return output;
+	}
+		
+	function hexToRGBA(hex){
+		hex = rgbaHEX(hex);
+		if(hex.charAt(0) == "#")
+			hex = hex.substr(1);
+		return {
+			r:parseInt(hex.substring(0, 2), 16),
+			g:parseInt(hex.substring(2, 4), 16),
+			b:parseInt(hex.substring(4, 6), 16),
+			a:parseInt(hex.substring(6, 8), 16)
+		}
+	}
+	
+	function rgbaToHEX(rgba){
+		var r = String("00" + Math.round(rgba.r).toString(16)).substr(-2);
+		var g = String("00" + Math.round(rgba.g).toString(16)).substr(-2);
+		var b = String("00" + Math.round(rgba.b).toString(16)).substr(-2);
+		var a = String("00" + Math.round(rgba.a).toString(16)).substr(-2);
+		return "#" + r + g + b + a;
+	}
+	
+	function rgbaHEX(hex){
+		return hex.length < 8 ? hex + "FF" : hex;
+	}
+	
+	function renderRGBA(rgba){
+		return "rgba(" + [rgba.r, rgba.g, rgba.b, rgba.a / 0xFF].join(", ") + ")";
+	}
+	
+	function renderPercent(percent){
+		return Math.round(percent * 100) + "%";
+	}
+}
+
+//try{
+ExportStylesAsCSS();
+//}catch(e){alert([e.lineNumber, ":", e, e.fileName])};

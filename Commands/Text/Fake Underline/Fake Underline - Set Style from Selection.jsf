@@ -1,0 +1,60 @@
+/* ===========================================================================
+	
+	File: Fake Underline - Set Style from Selection
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 0.1.1 ($Revision: 1.2 $)
+	Last update - $Date: 2009/02/23 01:24:47 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function()
+{
+	if (fw.selection.length != 1 || !fw.selection[0].pathAttributes) {
+		alert("Please select a single line object to specify the style for the fake underline.");
+		return;
+	}
+
+	if (typeof dojo == "undefined") { fw.runScript(fw.currentScriptDir + "/lib/lib.js"); }
+	dojo.require("fwlib.util.pngText");
+	
+	var underlinePrefs = fwlib.util.getPngTextData(
+		"jdlib.FakeUnderline",
+		{
+			lineOffset: 2,
+			pathAttributes: null
+		}
+	);
+	
+		// duplicate the pathAttributes so we can delete the sense_* properties.
+		// we need to do this so pathAttributes will fit into pngText, which is 
+		// limited to 1024 bytes.   
+	var pathAttributes = eval("(" + fw.selection[0].pathAttributes.toSource() + ")");
+	var brush = pathAttributes.brush;
+	
+	for (var key in brush) {
+		if (key.indexOf("sense_") == 0) {
+				// deleting these doesn't seem to hurt anything, and they make the
+				// JSON version of the object much smaller 
+			delete brush[key];
+		}
+	}
+	
+	underlinePrefs.pathAttributes = pathAttributes;
+	fwlib.util.setPngTextData("jdlib.FakeUnderline", underlinePrefs);
+})()
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

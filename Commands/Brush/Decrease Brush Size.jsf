@@ -1,0 +1,4 @@
+var b = fw.getDocumentDOM().pathAttributes.brush;
+if (b && b.diameter){
+	b.diameter = Math.max(b.diameter-1, 1);
+}

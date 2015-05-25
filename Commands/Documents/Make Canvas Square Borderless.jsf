@@ -1,0 +1,7 @@
+// v2
+var dom = fw.getDocumentDOM();
+if(dom.width < dom.height){
+    dom.setDocumentCanvasSize({left:0, top:-Math.ceil((dom.width-dom.height)/2), right:dom.width, bottom:dom.height + Math.floor((dom.width-dom.height)/2)}, true);
+}else{
+    dom.setDocumentCanvasSize({left:-Math.ceil((dom.height-dom.width)/2), top:0, right:dom.width + Math.floor((dom.height-dom.width)/2), bottom:dom.height}, true);
+}

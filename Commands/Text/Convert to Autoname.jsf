@@ -1,0 +1,13 @@
+var sel = fw.selection;
+if(sel.length>=0){
+	for(var s in sel){
+		if(sel[s] == '[object Text]'){
+			if(sel[i].name != null){
+				sel[i].customData.savedName = sel[i].name; // just for the heck of it...
+				sel[i].name = null;
+			}
+		}
+	}
+}else{
+	alert('Select Text objects first.');
+}

@@ -1,0 +1,84 @@
+// Fireworks JavaScript Command
+// Copy to Fireworks/Configuration/Commands/
+// Aaron Beall - http://abeall.com
+// Version 1.1
+
+var dom = fw.getDocumentDOM(); // document object
+var sel = new Array().concat(fw.selection); // saved selection
+
+DeleteHiddenObjects();
+
+function DeleteHiddenObjects(){
+	// find any selected elements that aren't hidden
+	var visSel = new Array();
+	for(var i in sel){
+		if(sel[i].visible && layerOf(sel[i]).visible) visSel.push(sel[i]);
+	}
+	// find all the hidden elements and elements on hidden layers
+	var hidElems = new Array();
+	for(var f in dom.frames){
+		hidElems[f] = new Array();
+		for(var l in dom.frames[f].layers){
+			if(!dom.frames[f].layers[l].visible) {
+				hidElems[f] = hidElems[f].concat(dom.frames[f].layers[l].elements);
+				continue;
+			}
+			for(var e in dom.frames[f].layers[l].elements){
+				var element = dom.frames[f].layers[l].elements[e];
+				if(!element.visible) hidElems[f].push(element);
+			}
+		}
+	}
+	// delete hidden elements, return selection to old visible elements
+	if(hidElems.length) {
+		/*var oldFrame = dom.currentFrameNum;
+		for(var f in hidElems){
+			dom.currentFrameNum = f;
+			fw.selection = hidElems[f];
+			dom.deleteSelection(false);
+		}
+		dom.currentFrameNum = oldFrame;*/
+		var allHidElems = [];
+		for(var f in hidElems)
+			allHidElems = allHidElems.concat(hidElems[f]);
+		fw.selection = allHidElems;
+		dom.deleteSelection(false);
+		fw.selection = visSel;
+	}
+	// delete any layers that are empty
+	var delLyrs = deleteEmptyHiddenLayers(0);
+	alert(allHidElems.length>0? allHidElems.length+" hidden object"+(allHidElems.length>1?"s were deleted.":" was deleted.") + (delLyrs>0? "\n"+delLyrs+" empty hidden layer"+(delLyrs>1?"s were deleted.":" was deleted."):"") : "No hidden objects were found." );
+	return true;
+}
+
+// recursive function to delete all empty layers
+function deleteEmptyHiddenLayers(numDeleted){
+	var f = dom.currentFrameNum;
+	if(dom.frames[f].layers.length==2) return false;
+	for(var l in dom.frames[f].layers){
+		var empty = true;
+		for(var fl in dom.layers[l].frames){
+			if(dom.layers[l].frames[fl].elements.length){
+				empty = false;
+				break;
+			}
+		}
+		if(empty && !dom.frames[f].layers[l].visible && dom.layers[l].layerType!='web'){
+			dom.deleteLayer(l);
+			return deleteEmptyHiddenLayers(++numDeleted); // deleting changes the layer order, so need to restart
+		}
+	}
+	return numDeleted;
+}
+
+// find a reference to the layer an element is on
+function layerOf(elem){
+	var f = dom.currentFrameNum;
+	for(var l in dom.frames[f].layers){
+		for(var e in dom.frames[f].layers[l].elements){
+			if(dom.frames[f].layers[l].elements[e].customData == elem.customData){
+				return dom.frames[f].layers[l];
+			}
+		}
+	}
+}

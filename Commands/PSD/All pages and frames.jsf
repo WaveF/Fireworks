@@ -1,0 +1,82 @@
+/*	Crreated by Sarthak Singhal				*/
+/*	The script will export all pages and all frames inside as PSD files	*/
+
+try
+{
+	
+	
+	if (fw.documents.length == 0)
+	throw "NoDocErr";
+	
+	var bool_result;
+	var Export_path;
+		
+	var page_counter;
+	var frame_counter;
+	var page_name;
+	var frame_name;
+	var temp_counter;
+
+	
+	//Couting the number of pages in the current document
+	var pages_count= fw.getDocumentDOM().pagesCount;
+	
+	//Getting the current page name
+	var current_page_name=page_name=fw.getDocumentDOM().pageName;
+	var current_frame_index=0;
+	
+	//Getting the user input for export location 
+	Export_path=fw.browseForFolderURL("Choose Folder",null);
+	
+	if (Export_path == null)
+	throw "NoFolderSelected";
+	
+	Export_path +="/";
+	
+	//Exporting all the pages one by one
+	for(page_counter=0;page_counter<pages_count;page_counter++)
+	{
+		fw.getDocumentDOM().changeCurrentPage(page_counter);
+		page_name=fw.getDocumentDOM().pageName;
+		frame_counter=fw.getDocumentDOM().frameCount;
+	
+			//Getting the current active frame
+			current_frame_index=fw.getDocumentDOM().currentFrameNum;
+			
+			//Exporting all frames withing the page
+			for(temp_counter=0;temp_counter<frame_counter;temp_counter++)
+			{
+				
+				fw.getDocumentDOM().currentFrameNum = temp_counter;
+				frame_name=fw.getDocumentDOM().frames[temp_counter].name;
+				fw.exportPSD(null,Export_path+page_name+"_"+frame_name+".psd");
+			}
+			
+			//Setting the active frame back
+			fw.getDocumentDOM().currentFrameNum = current_frame_index;
+		
+	}
+	
+	//Setting the active page as first page
+	fw.getDocumentDOM().changeCurrentPage(0);
+	page_counter =0 ;
+	
+	//Setting the active page as the one that was selected before saving as PSD
+	while(fw.getDocumentDOM().pageName != current_page_name)
+	{
+		fw.getDocumentDOM().changeCurrentPage(page_counter);
+		page_counter = page_counter +1 ;
+	}
+
+	
+}
+catch(err)
+{
+	if (err=="NoDocErr")
+	alert("Please open a document to be exported");
+	else
+	if (err=="NoFolderSelected")
+	{}
+	else
+	alert("Error during export");
+}

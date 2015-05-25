@@ -1,0 +1,32 @@
+/* ===========================================================================
+
+	Generate Web Assets.jsf
+
+	Copyright (c) 2013 John Dunning.  All rights reserved.
+	fw@johndunning.com
+	http://johndunning.com/fireworks
+
+   ======================================================================== */
+
+
+// ===========================================================================
+(function() {
+
+var currentScriptDir = fw.currentScriptDir;
+
+if (typeof require != "function" || !require.version) {
+	fw.runScript(currentScriptDir + "/Generate Web Assets/fwrequire.js"); }
+
+require({ contextPath: currentScriptDir + "/Generate Web Assets", baseUrl: "." }, [
+	"export/web-assets"
+], function(
+	WebAssets
+) {
+	var dom = fw.getDocumentDOM();
+
+	if (dom) {
+		WebAssets.exportState(dom);
+	}
+});
+
+})();

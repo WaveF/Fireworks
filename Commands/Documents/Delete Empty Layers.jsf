@@ -1,0 +1,31 @@
+// Fireworks JavaScript Command
+// Copy to Fireworks/Configuration/Commands/
+// Aaron Beall - http://abeall.com
+// Version 1.2
+// Requires Fireworks CS3
+
+var dom = fw.getDocumentDOM(); // document object
+var sel = new Array().concat(fw.selection); // saved selection
+
+DeleteEmptyLayers(0);
+
+// recursive function to delete all empty layers
+function DeleteEmptyLayers(numDeleted){
+	var f = dom.currentFrameNum;
+	if(dom.frames[f].layers.length==2) return false;
+	for(var l in dom.frames[f].layers){
+		var empty = true;
+		for(var fl in dom.layers[l].frames){
+			if(/*dom.layers[l].frames[fl].elements.length || */dom.layers[l].frames[fl].elemsandsublayers.length){
+				empty = false;
+				break;
+			}
+		}
+		if(empty && dom.layers[l].layerType!='web'){
+			dom.deleteLayer(l);
+			return DeleteEmptyLayers(++numDeleted); // deleting changes the layer order, so need to restart
+		}
+	}
+	alert(numDeleted==0 ? "No empty layers were found." : numDeleted+" empty layer"+(numDeleted>1?"s were":" was")+" deleted.");
+	return true;
+}

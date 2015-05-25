@@ -1,0 +1,37 @@
+/* 
+    Import multiple psd files as pages
+   
+    by WaveF
+    miniCG.com
+    
+*/
+
+(function(){
+	//选择文件
+	var fileList = fw.locateDocDialog(999, ["PS30"]);
+
+	for(var i=0; i<fileList.length; i++){
+		
+		//获取单个文件路径
+		filePath = fileList[i];
+		
+		/*
+			Trick:  此函数无法导入PSD文件，但可以将画布扩充至PSD画布大小
+					副作用是会产生一个空白页，因此执行后要删掉前一个页面
+		*/
+		fw.getDocumentDOM().InsertPageForImport(filePath, fw.getDocumentDOM().currentPageNum);
+		fw.getDocumentDOM().deletePageAt(fw.getDocumentDOM().currentPageNum-1);
+		
+		//导入文件
+		fw.getDocumentDOM().importFile(filePath, {left:0, top:0, right:0, bottom:0}, false, 0, false);
+
+		//符合画布
+		//fw.getDocumentDOM().setDocumentCanvasSizeToDocumentExtents(true);
+
+		if(fileList.length>1 && i<fileList.length-1){
+			//新增页面
+			fw.getDocumentDOM().addNewPage();
+		}
+
+	}
+})();

@@ -1,0 +1,47 @@
+/* ===========================================================================
+	
+	File: L - Move Top Layer Down
+
+	Author - John Dunning
+	Copyright - 2009 John Dunning.  All rights reserved.
+	Email - fw@johndunning.com
+	Website - http://johndunning.com/fireworks
+
+	Release - 1.1.1 ($Revision: 1.2 $)
+	Last update - $Date: 2009/02/22 23:30:05 $
+
+   ======================================================================== */
+
+
+// ===========================================================================
+//  Main
+// ===========================================================================
+
+try {
+
+(function()
+{
+	if (typeof dojo == "undefined") { fw.runScript(fw.currentScriptDir + "/lib/lib.js"); }
+	dojo.require("fwlib.layers");
+
+	var dom	= fw.getDocumentDOM();
+
+	var tree = new fwlib.layers.LayerTree();
+	var currentLayerName = tree.getCurrentLayer().name;
+	var currentTopLayer = tree.getCurrentLayer().getTopLayerAncestor();
+	var topLayerBelow = currentTopLayer.getTopLayerBelow();
+	
+	if (topLayerBelow) {
+			// put currentTopLayer below topLayerBelow (1 in last param)
+		dom.reorderLayer(currentTopLayer.index, topLayerBelow.index, false, 0, 1);
+		
+			// make the moved layer the current layer again, since it has a new index now
+			// reselect the previous current layer by name since the indexes 
+			// have shifted all around 
+		dom.currentLayerNum = fwlib.layers.getLayerIndexByName(currentLayerName);
+	}
+})();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}
