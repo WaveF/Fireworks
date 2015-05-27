@@ -1,0 +1,20 @@
+// JavaScript for Fireworks
+// access the command through Commands > PickFillColor
+// use 'Manage Saved Commands...' from Commands menu to delete existing commands
+
+(function(){
+	
+	if(fw.documents.length<1) return;
+	if(fw.selection.length<1) return;
+	
+	var dom = fw.getDocumentDOM();
+	var colorValue;
+	
+	//fw.activeTool = "Eyedropper";
+
+	//colorValue = fw.popupColorPicker({x:0, y:0}, "#FFFFFF00", true, false);
+	colorValue = fw.popupColorPickerOverMouse("#FFFFFF00", true, false);
+	
+	dom.setFillColor(colorValue);
+	
+})();

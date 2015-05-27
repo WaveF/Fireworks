@@ -1,0 +1,18 @@
+// JavaScript for Fireworks
+// access the command through Commands > PickStrokeColor
+// use 'Manage Saved Commands...' from Commands menu to delete existing commands
+
+(function(){
+	
+	if(fw.documents.length<1) return;
+	if(fw.selection.length<1) return;
+	
+	var dom = fw.getDocumentDOM();
+	var sel = fw.selection;
+	var i, colorValue;
+	
+	colorValue = fw.popupColorPickerOverMouse("#FFFFFF00", true, false);
+	
+	for(i in sel){ sel[i].pathAttributes.brushColor = colorValue; }
+	
+})();
