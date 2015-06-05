@@ -1,0 +1,617 @@
+// SPECTER AUTOSHAPE
+// 6/22/2013
+// DMITRIY FABRIKANT
+
+try{
+
+(function(){
+	var mouse = smartShape.currentMousePos;
+	var cps = smartShape.elem.controlPoints;
+	var data = smartShape.elem.customData;		//smart shape settings
+	
+	var defaultText = "miniCG.com";
+	 
+	//data integrity
+	if(data.anchorRect){
+		if (typeof data.anchorRect === 'string' || data.anchorRect instanceof String){
+			eval("var tmp = " + data.anchorRect + ";");
+			data.anchorRect = tmp;
+		}
+	}
+	var sconfig = fw.getDocumentDOM().pngText.specctr_config_settings;
+	
+	if (typeof specctr_config_settings === 'undefined' && typeof sconfig === 'string' || sconfig instanceof String){
+		eval("specctr_config_settings = " + sconfig + ";");
+	}
+	
+	var config = specctr_config_settings;
+	
+	smartShape.getsDragEvents = true;		//notify smartshape of every mouse movement while being dragged
+	
+
+	/*OPERATIONS*/
+	var operation = new Object();
+	operation.InsertSmartShapeAt = function(){
+
+		smartShape.elem.elements[0] = new Group(); //Label
+		smartShape.elem.elements[1] = new Group(); //Arm 
+		smartShape.elem.elements[2] = new Group(); //Text
+		smartShape.elem.elements[3] = new Group(); //Circle
+		
+		data.labelText = defaultText;
+		data.anchorRect = {left: mouse.x - 15, top: mouse.y + 3, right: mouse.x - 5, bottom: mouse.y + 13}; //this handles when the shape is dragged onto canvas from auto shapes window, thats why it needs the mouse coords
+		data.anchorID = -1;
+		
+		mflib = mflib || {};
+		if(mflib.anchorRect) data.anchorRect = mflib.anchorRect; 
+		if(mflib.text) data.labelText = mflib.text;
+		
+		//to track canvas size change by tracking anchor object xy-coordinates
+		if(mflib.specterID) data.anchorID = mflib.specterID;
+		if(mflib.anchorX) data.anchorX = mflib.anchorX;
+		if(mflib.anchorY) data.anchorY = mflib.anchorY;
+		
+		AddText(smartShape.elem.elements[2], mouse, data.labelText, true);	//writes text to canvas and sets data.labelRect as bounding rectangle
+		
+		DrawLabel(smartShape.elem.elements[0], mouse, data.labelRect); //uses data.labelRect set in AddText to place itself as a container around that text
+		DrawArm(smartShape.elem.elements[1], GetLabelRect(), data.anchorRect); //finds line between centers of 2 rectangles, then the intersections between line and rectangles and draws those.
+		
+		var circ = smartShape.elem.elements[3];
+		var arm = smartShape.elem.elements[1];
+		
+		DrawCircle(circ, mflib.end);		
+
+		//straighten line by checking for arm height and moving the label by that amount
+		var armNodes = smartShape.elem.elements[1].elements[0].contours[0].nodes;
+		var lineOffset = armNodes[1].y - armNodes[0].y;
+		
+		if(lineOffset != 0){
+			var offsetPoint = AddPoints(mouse, {x:0, y:lineOffset});
+			AddText(smartShape.elem.elements[2], offsetPoint, data.labelText, true);
+			DrawLabel(smartShape.elem.elements[0], offsetPoint, data.labelRect);
+			DrawArm(smartShape.elem.elements[1], GetLabelRect(), data.anchorRect);
+	  		var circ = smartShape.elem.elements[3];
+	  		var arm = smartShape.elem.elements[1];
+	 		DrawCircle(circ, mflib.end);		
+		}
+		
+		//sometimes still a little off... this is a hack to fix it :(
+		armNodes = smartShape.elem.elements[1].elements[0].contours[0].nodes;
+		lineOffset = armNodes[1].y - armNodes[0].y;
+		
+		if(lineOffset !== 0) SetNodePosition(armNodes[0], {x: armNodes[0].x, y: armNodes[1].y }); 
+	}
+	
+	operation.BeginDragControlPoint = function(){
+		/*
+				var sconfig = fw.getDocumentDOM().pngText.specctr_config_settings;
+				alert("what??"); 
+				if (typeof specctr_config_settings === "undefined") alert("undef 2");
+				if (typeof specctr_config_settings === "undefined" && typeof sconfig === 'string' || sconfig instanceof String){
+					alert("drag");
+					eval("specctr_config_settings = " + sconfig + ";");
+				}
+		*/
+		
+		//find anchor object by its specterID and check to see if its coordinates have changed, indicating a canvas resize has occurred
+		var dom = fw.getDocumentDOM();
+
+		for(var l in dom.layers){	//loop through all objects in document
+
+			for(var e in dom.layers[l].frames[dom.currentFrameNum].elements){
+
+				var obj = dom.layers[l].frames[dom.currentFrameNum].elements[e];	//for each object...
+
+				if(obj.customData && obj.customData.specterID && obj.customData.specterID == data.anchorID){	//if object id and specter id match...
+
+					if(obj.left != data.anchorX){	//if change in object placement it means canvas was resized or object was moved... update smart shape to anchor around the right place.
+						var widthOffset = obj.left - data.anchorX;
+						data.anchorRect = {left: data.anchorRect.left + widthOffset, top: data.anchorRect.top, right: data.anchorRect.right + widthOffset, bottom: data.anchorRect.bottom};
+						data.anchorX = obj.left;
+					}
+
+					if(obj.top != data.anchorY){	//if change in object placement it means canvas was resized or object was moved... update smart shape to anchor around the right place.
+						var heightOffset = obj.top - data.anchorY;
+						data.anchorRect = {left: data.anchorRect.left, top: data.anchorRect.top + heightOffset, right: data.anchorRect.right, bottom: data.anchorRect.bottom + heightOffset};
+						data.anchorY = obj.top;
+					}
+
+					break;
+
+				}
+
+			}
+
+		}
+		
+		
+		//set up for drag
+		var parms = smartShape.GetDefaultMoveParms();
+		var nods = smartShape.elem.elements[0].elements[0].contours[0].nodes;
+		
+		cps[0].RegisterMove(parms);
+
+		for(var i=0; i<nods.length; i++){
+			nods[i].RegisterMove(parms);
+		}
+		
+	}
+
+	operation.DragControlPoint = function(){
+		//preview arm placement
+		DrawArm(smartShape.elem.elements[1], GetLabelRect(), data.anchorRect);
+
+		var circ = smartShape.elem.elements[3];
+		var arm = smartShape.elem.elements[1];
+
+		DrawCircle(circ, mflib.end);
+	}
+	
+	operation.EndDragControlPoint = function(){
+		//redraw smartshape in new place
+		if(smartShape.elem.elements[2]){ 
+			data.labelText = smartShape.elem.elements[2].elements[0].textRuns.textRuns[0].characters;
+			AddText(smartShape.elem.elements[2], mouse, data.labelText);
+		}else{ 
+			data.labelText = defaultText;
+			smartShape.elem.elements[2] = new Group(); // Text
+			AddText(smartShape.elem.elements[2], mouse, data.labelText);
+		}
+
+		DrawLabel(smartShape.elem.elements[0], mouse, data.labelRect);
+		DrawArm(smartShape.elem.elements[1], GetLabelRect(), data.anchorRect);
+
+		var circ = smartShape.elem.elements[3];
+		var arm = smartShape.elem.elements[1];
+
+		DrawCircle(circ, mflib.end);		
+	}
+	
+	
+	/*DRAW FUNCTIONS*/
+	function DrawLabel(root, loc, rect){
+		//console.log("draw label: "+data.labelText);
+		var nods;
+		var w = rect.right - rect.left;
+		var h = rect.bottom - rect.top;
+	
+		root.elements[0] = new Path();
+		root.elements[0].contours[0] = new Contour();
+		root.elements[0].contours[0].isClosed = true;
+		nods = root.elements[0].contours[0].nodes;
+		nods.length = 4;
+
+		SetNodePosition(nods[0], {x: rect.left, y: rect.top});
+		SetNodePosition(nods[1], {x: rect.left + w, y: rect.top});
+		SetNodePosition(nods[2], {x: rect.left + w, y: rect.top + h});
+		SetNodePosition(nods[3], {x: rect.left, y: rect.top + h});
+		
+		/*setup control points*/
+		cps[0] = new ControlPoint();
+		SetControlPoint(cps[0], {x:rect.left, y: rect.top}, "Corner", "Drag to Move");
+	
+		/*label styling*/
+		var attrs = root.elements[0].pathAttributes;
+		attrs.fill = null;
+		attrs.brush = null;
+		/*{ alphaRemap:"none", angle:0, antiAliased:false, aspect:100, blackness:0, category:"bc_Pencil", concentration:100, dashOffSize1:2,
+		dashOffSize2:2, dashOffSize3:2, dashOnSize1:8, dashOnSize2:1, dashOnSize3:1, diameter:1, feedback:"none", flowRate:0, maxCount:15,
+		minSize:1, name:"bn_1-Pixel", numDashes:0, shape:"circle", softenMode:"bell curve", softness:0, spacing:15, 
+		textureBlend:0, textureEdge:0, tipColoringMode:"random", tipCount:1, tipSpacing:0, tipSpacingMode:"random", type:"simple" };*/
+		attrs.brushColor = "#ffffff";
+	}
+
+
+	function DrawArm(root, labelRect, textRect){
+		// Draw Arm.
+		root.elements[0] = new Path();
+		root.elements[0].contours[0] = new Contour();
+		root.elements[0].contours[0].isClosed = false;
+		nods = root.elements[0].contours[0].nodes;
+
+		var r0 = {x: labelRect.left, y: labelRect.top};
+		var r1 = {x: labelRect.right, y: labelRect.top};
+		var r2 = {x: labelRect.right, y: labelRect.bottom};
+		var r3 = {x: labelRect.left, y: labelRect.bottom};		
+		
+		var labelCenter = RectangleCenter(labelRect);
+		var textCenter = RectangleCenter(textRect);
+
+		// Figure out bend.
+		var labelOnLeft = false;
+
+		if (labelCenter.x < textCenter.x) labelOnLeft = true;
+
+		var dist = 45;
+		var bend = false;
+
+		if (labelOnLeft) {
+
+			// Label on left.
+			if (textCenter.x - labelRect.right > dist) {
+				// Arm will be on the right.
+				bend = "right";
+			}
+
+		}else{
+			// Label on right.
+			if (labelRect.left - textCenter.x > dist) {
+				// Arm will be on the left.
+				bend = "left";
+			}
+		}
+		
+		// Place nodes.
+		if (bend) {
+
+			nods.length = 3;
+
+			if(bend === "right"){
+
+				SetNodePosition(nods[0], r1);
+
+				var bendPoint = AddPoints(r1, {x:40, y:0}); 
+				SetNodePosition(nods[1], bendPoint);
+
+				var textInter = FindRectangleLineIntersection(bendPoint, textCenter, textRect);
+				SetNodePosition(nods[2], textInter);
+
+			}else if(bend === "left"){
+
+				SetNodePosition(nods[0], r0);
+
+				var bendPoint = AddPoints(r0, {x:-40, y:0}); 
+				SetNodePosition(nods[1], bendPoint);
+
+				var textInter = FindRectangleLineIntersection(bendPoint, textCenter, textRect);
+				SetNodePosition(nods[2], textInter);
+
+			}
+
+			mflib.end = nods[2];
+
+		}else{
+
+			// Label is above or below object being specced.
+			nods.length = 2;
+			
+			var labelInter = FindRectangleLineIntersection(textCenter, labelCenter, labelRect);
+			var textInter = FindRectangleLineIntersection(labelCenter, textCenter, textRect);
+		
+			SetNodePosition(nods[0], labelInter);
+			SetNodePosition(nods[1], textInter);
+
+			mflib.end = nods[1];
+
+		}
+	
+		var brush = {	alphaRemap:"none", angle:0, antiAliased:true, aspect:100, blackness:0, category:"bc_Pencil", concentration:100, dashOffSize1:2,
+						ashOffSize2:2, dashOffSize3:2, dashOnSize1:8, dashOnSize2:1, dashOnSize3:1, diameter:1, feedback:"brush", flowRate:0, maxCount:15,
+						minSize:1, name:"bn_1-Pixel Anti-Aliased", numDashes:0, shape:"circle", softenMode:"bell curve", softness:0, spacing:15,
+						textureBlend:0, textureEdge:0, tipColoringMode:"random", tipCount:1, tipSpacing:0, tipSpacingMode:"random", type:"simple" 
+		};
+
+		// Arm styles.
+		var attrs = root.elements[0].pathAttributes;
+		attrs.fill = null;
+		attrs.brush = brush;
+		attrs.brushColor = config.fillColor;
+	
+	}
+
+	function DrawCircle(root, loc) {
+		// Draw circle.
+		root.elements[0] = new Path();
+		root.elements[0].contours[0] = new Contour();
+		root.elements[0].contours[0].isClosed = true;
+		
+		var cnods = root.elements[0].contours[0].nodes;
+		cnods.length = 4;
+
+		// Return bezier handles.
+		var bzHandles = function(pt, amp, horiz) {
+			var pred, succ;
+			if (horiz) {
+				pred = AddPoints(pt, {x:-amp, y:0});
+				succ = AddPoints(pt, {x:amp, y:0});  
+			}else{
+				pred = AddPoints(pt, {x:0, y:-amp});
+				succ = AddPoints(pt, {x:0, y:amp});  
+			}
+			return {p: pred, s: succ};
+		}
+		
+		var handles;
+		var end = {x:loc.x, y:loc.y};
+		
+		// Left
+		var c0 = AddPoints(end, {x:-3, y:0});
+		handles = bzHandles(c0, 2, false); 
+		
+		var c0p = handles.s;
+		var c0s = handles.p;
+		SetBezierNodePosition(cnods[0], c0p, c0, c0s);
+		
+		// Top.
+		var c1 = AddPoints(end, {x: 0, y: -3});
+		handles = bzHandles(c1, 2, true); 
+		
+		var c1s = handles.s;
+		var c1p = handles.p;
+		SetBezierNodePosition(cnods[1], c1p, c1, c1s);
+		
+		// Right.
+		var c2 = AddPoints(end, {x: 3, y: 0});
+		handles = bzHandles(c2, 2, false); 
+		
+		// Reversed because they are in wrong order.
+		var c2s = handles.s;
+		var c2p = handles.p;
+		SetBezierNodePosition(cnods[2], c2p, c2, c2s);
+		
+		// Bottom.
+		var c3 = AddPoints(end, {x: 0, y: 3});
+		handles = bzHandles(c3, 2, true);
+		
+		// Reversed because they are in wrong order.
+		var c3p = handles.s;
+		var c3s = handles.p;
+		SetBezierNodePosition(cnods[3], c3p, c3, c3s); 
+
+		var brush = {	alphaRemap:"none", angle:0, antiAliased:true, aspect:100, blackness:0, category:"bc_Pencil", concentration:100, dashOffSize1:2,
+						ashOffSize2:2, dashOffSize3:2, dashOnSize1:8, dashOnSize2:1, dashOnSize3:1, diameter:1, feedback:"brush", flowRate:0, maxCount:15,
+						minSize:1, name:"bn_1-Pixel Anti-Aliased", numDashes:0, shape:"circle", softenMode:"bell curve", softness:0, spacing:15,
+						textureBlend:0, textureEdge:0, tipColoringMode:"random", tipCount:1, tipSpacing:0, tipSpacingMode:"random", type:"simple" 
+		};
+
+		// Circle styles.
+		var attrs = root.elements[0].pathAttributes;
+		
+		attrs.fill = {
+			category: "fc_Solid",
+			ditherColors: ["#000000", "#000000"],
+			edgeType: "antialiased",
+			feather: 0,
+			gradient: null,
+			name: "fn_Normal",
+			pattern: null,
+			shape: "solid",
+			stampingMode: "blend opaque",
+			textureBlend: 0,
+			webDitherTransparent: false
+		};
+		
+		attrs.fillColor = config.fillColor;
+		attrs.brush = brush;
+		attrs.brushColor = config.fillColor;
+	}
+
+	function AddText(root, loc, text, edge){
+		// Convoluted! Sorry future Self.
+		root.elements[0] = new Text();
+		var t = root.elements[0];
+	
+		t.autoExpand = true;
+		t.textRuns = {
+			initialAttrs:{
+				alignment: "left",
+				antiAliasSharpness: config.antiAliasSharpness,
+				antiAliasStrength:config.antiAliasStrength,
+				baselineShift:config.baselineShift,
+				bold:config.bold,
+				face:config.face,
+				fillColor:config.fillColor,
+				horizontalScale:config.horizontalScale,
+				italic:config.italic,
+				leading:config.leading,
+				leadingMode:config.leadingMode,
+				overSample:config.overSample,
+				paragraphIndent:config.paragraphIndent,
+				paragraphSpacingAfter:config.paragraphSpacingAfter,
+				paragraphSpacingBefore:config.paragraphSpacingBefore,
+				rangeKerning:config.rangeKerning,
+				size:config.size,
+				underline:config.underline
+			},
+			textRuns:[
+			{
+				changedAttrs:{},
+				characters: text
+			}]
+		};
+	
+		var hPad = 4;
+		var vPad = 2;
+	
+		var canvasWidth = fw.getDocumentDOM().width;
+	
+		if (edge && mflib.labelSide === "right") {
+			t.rawLeft = canvasWidth - t.rawWidth - hPad;
+		} else {
+			t.rawLeft = loc.x + hPad;
+		}
+		
+		t.rawTop = loc.y + vPad;
+		
+		data.labelRect = {left: t.pixelRect.left - hPad, top: t.pixelRect.top - vPad, right: t.pixelRect.right + hPad, bottom: t.pixelRect.bottom + hPad};
+		//console.log(data.labelRect);
+
+		var labelCenter = RectangleCenter(data.labelRect);
+		var anchorCenter = RectangleCenter(data.anchorRect);
+		var labelOnLeft = false;
+		
+		if (labelCenter.x < anchorCenter.x) labelOnLeft = true;
+		
+		//var alignment = labelOnLeft ? "left" : "right";
+		var alignment = "left";
+
+		root.elements[0] = new Text();
+		
+		var t = root.elements[0];
+		t.autoExpand = true;
+		t.textRuns = {
+			initialAttrs:{
+				alignment: alignment,
+				antiAliasSharpness: config.antiAliasSharpness,
+				antiAliasStrength:config.antiAliasStrength,
+				baselineShift:config.baselineShift,
+				bold:config.bold,
+				face:config.face,
+				fillColor:config.fillColor,
+				horizontalScale:config.horizontalScale,
+				italic:config.italic,
+				leading:config.leading,
+				leadingMode:config.leadingMode,
+				overSample:config.overSample,
+				paragraphIndent:config.paragraphIndent,
+				paragraphSpacingAfter:config.paragraphSpacingAfter,
+				paragraphSpacingBefore:config.paragraphSpacingBefore,
+				rangeKerning:config.rangeKerning,
+				size:config.size,
+				underline:config.underline
+			},
+			textRuns:[{
+				changedAttrs:{},
+				characters: text
+			}]
+		};
+		
+		if (edge && mflib.labelSide === "right") { t.rawLeft = canvasWidth - t.rawWidth - hPad; }
+		else { t.rawLeft = loc.x + hPad; }
+		
+		t.rawTop = loc.y + vPad;
+	}
+	
+	/*MATH FUNCTIONS TO AID DRAWING*/
+	function FindIntersectionOrientation(angPoint, pt2, w, h){
+		var deltaY = pt2.y - angPoint.y;
+		var deltaX = pt2.x - angPoint.x;
+	
+		var angle = Math.atan2(deltaY, deltaX);
+
+		if (angle < 0) angle += 2*Math.PI;
+	
+		if(angle >= Math.atan(h/w) && angle < Math.PI-Math.atan(h/w)) return "bottom";
+		else if(angle >= Math.PI-Math.atan(h/w) && angle < Math.PI+Math.atan(h/w)) return "left";
+		else if(angle >= Math.PI+Math.atan(h/w) && angle < 2*Math.PI-Math.atan(h/w)) return "top";
+		else return "right";
+	}
+
+	function FindIntersection(A, B, L, M){
+		
+		var Xint = null;
+		var Yint = null;
+	
+		var deltaYab = B.y - A.y;
+		var deltaXab = B.x - A.x;
+	
+		var deltaYlm = M.y - L.y;
+		var deltaXlm = M.x - L.x;
+	
+		if (deltaXab != 0) var slopeAB = deltaYab/deltaXab;		
+		else {Xint = Math.round(A.x); slopeAB = null;}	/*if deltaX is 0, then this is vertical line. set Xint to x coordinate*/
+		if (deltaXlm != 0) var slopeLM = deltaYlm/deltaXlm;
+		else {Xint = Math.round(L.x); slopeLM = null;}								
+		
+		if (slopeAB == slopeLM) return null; /*equal slopes, lines parallel*/
+	
+		if (slopeAB == null) {
+			bLM = L.y - slopeLM * L.x;
+			Yint = Math.round(slopeLM * Xint + bLM);
+			return {x: Xint, y: Yint};
+		}
+	
+		if (slopeLM == null){
+			bAB = A.y - slopeAB * A.x;
+			Yint = Math.round(slopeAB * Xint + bAB);
+			return {x: Xint, y: Yint};
+		}
+		
+		bAB = A.y - slopeAB * A.x;
+		bLM = L.y - slopeLM * L.x;
+		Xint = Math.round((bLM - bAB)/(slopeAB - slopeLM));
+		Yint = Math.round(slopeAB * Xint + bAB);
+	
+		return {x: Xint, y: Yint};
+	}
+
+	function FindRectangleLineIntersection(outsidePoint, insidePoint, rect){
+		
+		var r0 = {x: rect.left, y: rect.top};
+		var r1 = {x: rect.right, y: rect.top};
+		var r2 = {x: rect.right, y: rect.bottom};
+		var r3 = {x: rect.left, y: rect.bottom};		
+		
+		var width = r1.x - r0.x;
+		var height = r2.y - r1.y;
+		
+		var side = FindIntersectionOrientation(insidePoint, outsidePoint, width, height);
+		
+		switch(side){
+			case "top":
+			var interPoint = FindIntersection(	outsidePoint, insidePoint, r0, r1);
+			break;
+		
+			case "right":
+			var interPoint = FindIntersection(	outsidePoint, insidePoint, r1, r2);
+			break;
+		
+			case "bottom":
+			var interPoint = FindIntersection(	outsidePoint, insidePoint, r2, r3);
+			break;
+		
+			case "left":
+			var interPoint = FindIntersection(	outsidePoint, insidePoint, r3, r0);
+			break;
+		}
+		
+		return interPoint;
+	}
+	
+	
+	/*UTILITY FUNCTIONS*/
+	function GetLabelRect(){
+		var nods = smartShape.elem.elements[0].elements[0].contours[0].nodes;
+		return {left: nods[0].x, top: nods[0].y, right: nods[1].x, bottom: nods[2].y };
+	}
+	
+	function Avg(a,b){
+		return (a+b)/2;
+	}
+	
+	function RectangleCenter(rect){
+		return {x: Avg(rect.left, rect.right), y: Avg(rect.top, rect.bottom)};
+	}
+
+	function SetControlPoint(cp, pt, name, toolTip){
+		cp.x = pt.x;
+		cp.y = pt.y;
+		cp.name = name;
+		cp.toolTip = toolTip;
+	}
+
+	function SetNodePosition(node, pt){
+		SetBezierNodePosition(node, pt,pt,pt);
+	}
+
+	function SetBezierNodePosition(node, ptp, pt, pts){
+		node.predX	= ptp.x;	node.predY	= ptp.y;
+		node.x		= pt.x;	node.y		= pt.y;
+		node.succX	= pts.x;	node.succY	= pts.y;
+	}
+
+	function AddPoints(pt1, pt2){
+		return {x:pt1.x + pt2.x, y:pt1.y + pt2.y};
+	}
+
+
+	/*RUN*/
+	if (operation[smartShape.operation])
+		operation[smartShape.operation]();
+
+
+})();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

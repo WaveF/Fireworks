@@ -1,0 +1,90 @@
+// JavaScript for Fireworks
+// access the command through Commands > Correct Fontsize
+// use 'Manage Saved Commands...' from Commands menu to delete existing commands
+
+(function(){
+	
+	if(fw.documents.length<1) return;
+	if(fw.selection.length<1) return;
+	
+	var dom = fw.getDocumentDOM();
+	
+	
+	//dom.ungroup();
+	
+	var sel = fw.selection;
+	
+	var i, j, selX, selY, selW, selH, origX, origY, origW, origH, origExpand, newText;
+	
+	var tolerance = prompt("请输入匹配文本容差值：", 0);
+	if(tolerance==null) return;
+	
+	for(i in sel){
+		
+		if(sel[i] == "[object Text]"){
+			
+			origX = sel[i].left;
+			origY = sel[i].top;
+			origW = sel[i].width;
+			origH = sel[i].height;
+			origExpand = sel[i].autoExpand;
+			
+			fw.selection = sel[i];
+			dom.clipCopy();
+			dom.cloneSelection();
+			fw.selection[0].autoExpand = true;
+			selX = fw.selection[0].left;
+			selY = fw.selection[0].top;
+			selW = fw.selection[0].width;
+			selH = fw.selection[0].height;
+			dom.deleteSelection(false);
+			
+			dom.addNewText({left:selX, top:selY, right:0, bottom:0}, true);
+			dom.applyFontMarkup("size", "1pt");
+			dom.setTextAutoExpand(true);
+			dom.setTextCharSpacing(sel[i].textRuns.initialAttrs.rangeKerning);
+			dom.setTextLeading(sel[i].textRuns.initialAttrs.leading, sel[i].textRuns.initialAttrs.leadingMode);
+			
+			newText = fw.selection[0];
+			
+			newText.font = sel[i].font;
+			newText.textChars = sel[i].textChars;
+			newText.alignment = sel[i].alignment;
+			newText.autoKern = sel[i].autoKern;
+			newText.antiAliased = sel[i].antiAliased;
+			newText.antiAliasMode = sel[i].antiAliasMode;
+			newText.fontsize = 1;
+			
+			for(j=0; j<900; j++){
+			
+				if(newText.width < selW){
+					newText.fontsize = newText.fontsize + j;
+					if(fw.selection[0].width >= selW - tolerance) break;
+				}
+				
+			}
+			
+			//fw.selection[0].fontsize = fw.selection[0].fontsize;
+			
+			if(!origExpand){
+				newText.autoExpand = false;
+				dom.setTextRectangle({left:0, top:0, right:origW, bottom:origH});
+			}
+			
+			dom.moveSelectionBy({x:origX-newText.left, y:origY-newText.top}, false, false);
+			Refresh();
+		}
+	}
+	
+	//dom.group("normal");
+	
+	
+	function FixFontSize(){
+		
+	}
+	
+	function Refresh(){
+		dom.changeCurrentPage(dom.currentPageNum);
+	}
+
+})();
