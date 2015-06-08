@@ -7,14 +7,15 @@ try {
 	(function(){
 	
 		if(fw.documents.length<1) return;
+		if(fw.selection.length<1) return;
 		
 		var symbolName = "_SoloSymbolMode_";
+		var sel = fw.selection;
 		
 		if (!fw.getDocumentDOM().isSymbolDocument) {
-			if (fw.selection.length) {
-				fw.getDocumentDOM().convertToSymbol("graphic", symbolName, false);
-				fw.getDocumentDOM().editSymbol(fw.selection[0].symbolID);
-			}
+			fw.getDocumentDOM().convertToSymbol("graphic", symbolName, false);
+			fw.getDocumentDOM().editSymbol(fw.selection[0].symbolID);
+			fw.getDocumentDOM().selectAll();
 		}else{
 			fw.getDocumentDOM().exitSymbolEdit(1);
 			fw.getDocumentDOM().detachInstanceFromSymbol();
@@ -22,6 +23,8 @@ try {
 			fw.getDocumentDOM().deleteSymbol(symbolName);
 		}
 		
+		fw.activeViewScale = 2;
+		fw.activeViewScale = 1;
 	})();
 
 } catch (exception) {
