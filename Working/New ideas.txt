@@ -23,7 +23,7 @@ setting it to duplicate at 180 degrees and offset the objects 2 pixels from each
 http://www.communitymx.com/content/source/D6E52/dor_panel.gif
 
 #features
-- Make a grouping for transform options
+- Make a group for transform options
 
   http://www.reallusion.com/iclone/Help/iClone5/Images/Panel_Multi_Duplicate.jpg
   http://www.hotgloo.com/img/guide/part1_step4.jpg
