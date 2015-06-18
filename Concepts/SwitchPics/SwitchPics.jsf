@@ -1,0 +1,102 @@
+var dom = fw.getDocumentDOM();
+var sel = fw.selection;
+if (sel.length > 1) {
+    var SymbolName = prompt("Please enter symbol name:", "SwitchPics");
+    if (SymbolName != null) {
+        var i, j = 0;
+        var location = [sel[0].left, sel[0].top];
+        var optionNames = "";
+        var optionCode = "";
+        var labelNames = "";
+        var labelCode = "";
+        var len = sel.length;
+        var nonLabelArray = [];
+        var nonLabelNameArray = [];
+        var labelArray = [];
+        var labelNameArray = [];
+        var labelTextArray = [];
+        for (i = 0; i < len; i++) {
+            dom.selectNone();
+            fw.selection = sel[i];
+            if (fw.selection[0] != "[object Text]") {
+                if(fw.selection[0].name==null || fw.selection[0].name.toLowerCase()!="bg"){
+                    j++;
+                    var newName;
+                    if (fw.selection[0].name == null) {
+                        newName = "state" + j;
+                    } else {
+                        newName = fw.selection[0].name
+                    }
+                    dom.setElementName(newName);
+                    nonLabelArray.push(fw.selection[0]);
+                    nonLabelNameArray.push(newName);
+                }
+            } else {
+                if(fw.selection[0].name==null){
+                    dom.setElementName(fw.selection[0].textChars);
+                    labelNameArray.push(fw.selection[0].textChars);
+                }else{
+                    dom.setElementName(fw.selection[0].name);
+                    labelNameArray.push(fw.selection[0].name);
+                }
+                labelArray.push(fw.selection[0]);
+                labelTextArray.push(fw.selection[0].textChars);
+            }
+        }
+        dom.selectNone();
+        fw.selection = sel;
+        dom.group("normal");
+        dom.clipCopy();
+        dom.ungroup();
+        optionNames = nonLabelNameArray[0] + ",";
+        for (i = 0; i < nonLabelArray.length; i++) {
+            dom.setElementVisibleByName(nonLabelNameArray[i], true);
+            optionNames += nonLabelNameArray[i] + ",";
+            optionCode += "Widget.GetObjectByName('" + nonLabelNameArray[i] + "').visible = (state=='" + nonLabelNameArray[i] + "');";
+        }
+        dom.selectNone();
+        fw.selection = labelArray;
+        for (i = 0; i < labelArray.length; i++) {
+            labelNames += "values.push({ name:'" + labelNameArray[i] + "', type:'text', value:'" + labelTextArray[i] + "' });";
+            labelCode += "Widget.GetObjectByName('" + labelNameArray[i] + "').textChars = v[" + (i + 1) + "].value;";
+        }
+        fw.selection = sel;
+        dom.group("normal");
+        var tmpDOM = fw.createDocument();
+        tmpDOM.clipPaste("ask user", "vector");
+        tmpDOM.setDocumentCanvasSizeToDocumentExtents(true);
+        tmpDOM.ungroup();
+        tmpDOM.convertToSymbol("graphic", SymbolName, false);
+        var SymbolFolder = fw.userJsCommandsDir;
+        SymbolFolder = SymbolFolder.replace("Commands", "Common Library/Custom Symbols/");
+        if (!Files.exists(SymbolFolder)) {
+            Files.createDirectory(SymbolFolder)
+        }
+        var SymbolPath = SymbolFolder + SymbolName + ".graphic.png";
+        Files.deleteFileIfExisting(SymbolPath);
+        if (fw.platform == "win") {
+            fw.saveAs(null, SymbolPath, false);
+        } else {
+            fw.saveDocument(tmpDOM, SymbolPath);
+        }
+        fw.closeDocument(tmpDOM, false);
+        var jsPath = SymbolFolder + SymbolName + ".jsf";
+        Files.deleteFileIfExisting(jsPath);
+        Files.createFile(jsPath, "TEXT", "????");
+        var jsFile = Files.open(jsPath, true);
+        var jsFileText = "";
+        jsFileText += "function setDefaultValues(){var values = new Array();values.push({ name:'State', type:'ComboBox', value:'";
+        jsFileText += optionNames.substr(0, optionNames.length-1);
+        jsFileText += "'});"
+        jsFileText += labelNames;
+        jsFileText += "Widget.elem.customData['currentValues'] = values;}function applyCurrentValues(){var v = Widget.elem.customData['currentValues'];var state = v[0].value.split(',')[0].toString();";
+        jsFileText += optionCode;
+        jsFileText += labelCode;
+        jsFileText += "}switch (Widget.opCode){case 1: setDefaultValues(); break;case 2: applyCurrentValues(); break;}";
+        jsFile.write(jsFileText);
+        jsFile.close();
+        fw.reloadCommonLibrary();
+    }
+} else {
+    alert("You must select at least 2 objects!");
+}
