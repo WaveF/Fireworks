@@ -1,0 +1,1 @@
+// Copyright (c) 2005 Macromedia. All rights reserved.// Rotate document 270 degrees.fw.getDocumentDOM().rotateDocument(270);

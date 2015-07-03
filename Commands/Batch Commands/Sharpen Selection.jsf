@@ -1,0 +1,1 @@
+//--for batch only--// Copyright (c) 2005 Macromedia. All rights reserved.// Sharpen the selected elementsfw.getDocumentDOM().filterSelection({ EffectMoaID:"{c20952b1-fc76-11d0-8be700a024cdc039}", MB_filter_preview_tile_size:"-1 -1" });

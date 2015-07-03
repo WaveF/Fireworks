@@ -1,0 +1,1 @@
+// Copyright (c) 2005 Macromedia. All rights reserved.// Rotate selection 90 degrees.fw.getDocumentDOM().rotateSelection(90, "autoTrimImages transformAttributes");

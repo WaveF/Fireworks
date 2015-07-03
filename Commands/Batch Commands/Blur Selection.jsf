@@ -1,0 +1,1 @@
+//--for batch only--// Copyright (c) 2005 Macromedia. All rights reserved.// Blur the selected elementsfw.getDocumentDOM().filterSelection({ EffectMoaID:"{f1cfce41-718e-11d1-8c8200a024cdc039}", MB_filter_preview_tile_size:"-1 -1" });

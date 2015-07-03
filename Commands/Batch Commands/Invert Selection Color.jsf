@@ -1,0 +1,1 @@
+//--for batch only--// Copyright (c) 2005 Macromedia. All rights reserved.// Invert the color of the selected elementsfw.getDocumentDOM().filterSelection({ EffectMoaID:"{d2541291-70d6-11d1-8c8000a024cdc039}", MB_filter_preview_tile_size:"-1 -1" });
