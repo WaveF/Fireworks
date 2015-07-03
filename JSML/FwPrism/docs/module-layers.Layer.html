@@ -1,0 +1,2079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: Layer</title>
+
+<!--
+    <script src="http://shjs.sourceforge.net/sh_main.min.js"> </script>
+    <script src="http://shjs.sourceforge.net/lang/sh_javascript.min.js"> </script>
+-->
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/node-dark.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+    
+    <h1 class="page-title">Class: Layer</h1>
+    
+    
+
+
+
+<section>
+    
+<header>
+    <h2>
+        <span class="ancestors"><a href="module-layers.html">layers</a>.</span>
+    
+    Layer
+    </h2>
+    
+</header>  
+
+<article>
+    <div class="container-overview">
+    
+    
+    
+        
+<dt>
+    <h4 class="name" id="Layer"><span class="type-signature"></span>new Layer</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Constructor for a <code>Layer</code> object that holds information about a given
+layer in the current document.  There's no need to create an instance
+of this class directly; rather, you'll retrieve <code>Layer</code> instances through
+a <a href="module-layers.LayerTree.html">module:layers.LayerTree</a> instance.</p>
+
+<p><code>Layer</code> instances have a number of properties that make it easier to
+understand the layer structure in a document.  For instance, <code>layer.parent</code>
+points to the layer's parent, which is otherwise a chore to figure out
+using the default API.</p>
+
+<p>This code will display the name of the top-level layer that contains the
+current layer:</p>
+
+<pre><code>var tree = new layers.LayerTree();
+alert(tree.currentLayer.topLayerAncestor.name);
+</code></pre>
+    </div>
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>inConfig</code></td>
+            
+            
+            <td class="type">
+            
+                        Object
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"><p>An object containing properties that are copied
+            onto the <code>Layer</code> instance.</p></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 399</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    <p>A <code>Layer</code> instance representing one of the layers in the
+            current document.</p>
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">Object</span> 
+		
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+    
+    </div>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+        <h3 class="subsection-title">Members</h3>
+        
+        <dl>
+            
+<dt>
+    <h4 class="name" id="allElements"><span class="type-signature">&lt;readonly> </span>allElements<span class="type-signature"> :Array</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>An array of the Fireworks elements and sub-layers that are on the
+layer in the current state.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 546</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="disclosure"><span class="type-signature"></span>disclosure<span class="type-signature"> :Boolean</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Whether the disclosure triangle for the layer in the <em>Layers</em> panel
+is open or closed</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 754</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="elements"><span class="type-signature">&lt;readonly> </span>elements<span class="type-signature"> :Array</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>An array of the Fireworks elements on the layer.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 498</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="elemsandsublayers"><span class="type-signature">&lt;readonly> </span>elemsandsublayers<span class="type-signature"> :Array</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>An array of the Fireworks elements and sub-layers that are on the
+layer in the current state.</p>
+
+<p>Note that the sub-layers in this array are regular Fireworks layers,
+not <code>Layer</code> instances.  If you want to loop through a layer's
+<code>elemsandsublayers</code> array and access the <code>Layer</code> instance for each
+sub-layer you find, you'll need to manually access the sub-layers you
+find, like so:</p>
+
+<pre><code>var toolbar = new LayerTree().layer("toolbar"),
+    elemsandsublayers = toolbar.elemsandsublayers,
+    sublayerIndex = 0;
+
+for (var i = 0; i &lt; elemsandsublayers.length; i++) {
+    if (elemsandsublayers[i].layerType) {
+        // this is a layer object, so look up the corresponding
+        // Layer instance in the parent layer's sublayers array
+        toolbar.sublayers[sublayerIndex++] // ...
+    } else {
+        // do something with the regular element
+    }
+}
+</code></pre>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 532</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="elemsIndex"><span class="type-signature"></span>elemsIndex<span class="type-signature"> :Number</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>The index of this layer in its parent's <code>elemsandsublayers</code> array,
+or the layer's <code>sublayerIndex</code> if it is a top layer.  The
+<code>elemsandsublayers</code> array is ordered from top to bottom, while the
+<code>sublayerIndex</code> is ordered from bottom to top.</p>
+
+<p>This index can be used to figure out which element or sub-layer is
+above or below a given <code>Layer</code> instance in its parent layer.</p>
+
+<p>Note that due to limitations in the Fireworks API, this value will
+be wrong if the sub-layer has a sibling with exactly the same name
+and number of elements and sub-layers.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 655</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="index"><span class="type-signature"></span>index<span class="type-signature"> :Number</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>The index of the layer in the Fireworks layers stack.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 434</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="isTopLayer"><span class="type-signature">&lt;readonly> </span>isTopLayer<span class="type-signature"> :Boolean</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Whether the layer is at the top level of the <em>Layers</em> panel.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 780</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="isWebLayer"><span class="type-signature">&lt;readonly> </span>isWebLayer<span class="type-signature"> :Boolean</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Whether the layer is a web layer.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 793</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="layer"><span class="type-signature">&lt;readonly> </span>layer<span class="type-signature"> :Fireworks Layer</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>The underlying Fireworks layer object that's represented by this
+<code>Layer</code> instance.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 458</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="layerAbove"><span class="type-signature">&lt;readonly> </span>layerAbove<span class="type-signature"> :Layer</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>The <code>Layer</code> that is immediately above this layer in the <em>Layers</em>
+panel.  This will be <code>null</code> if the layer is at the very top of the
+stack.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 859</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="layerBelow"><span class="type-signature">&lt;readonly> </span>layerBelow<span class="type-signature"> :Layer</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>The <code>Layer</code> that is immediately below this layer in the <em>Layers</em>
+panel.  This will be <code>null</code> if the layer is at the very bottom of
+the stack.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 895</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="locked"><span class="type-signature"></span>locked<span class="type-signature"> :Boolean</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Whether the layer is locked in the <em>Layers</em> panel.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 728</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="name"><span class="type-signature"></span>name<span class="type-signature"> :String</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>The name of the layer.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 474</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="parent"><span class="type-signature"></span>parent<span class="type-signature"> :Layer</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>The <code>Layer</code> instance that contains this layer.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 427</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="sublayerIndex"><span class="type-signature"></span>sublayerIndex<span class="type-signature"> :Number</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>The position of the layer among its sub-layer siblings under its
+immediate parent.  If the layer is at the top level, this will be
+its position among the top-level layers.</p>
+
+<p>Note that this index is from the bottom up, so the bottom-most
+sub-layer in a layer has a <code>sublayerIndex</code> of <code>0</code>.  This is the
+reverse order of the native <code>elemsandsublayers</code> array.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 447</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="sublayers"><span class="type-signature">&lt;readonly> </span>sublayers<span class="type-signature"> :[Layer]</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>An array of the layer's sub-layers, if any.  Only immediate
+sub-layers are returned.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 572</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="topLayerAbove"><span class="type-signature">&lt;readonly> </span>topLayerAbove<span class="type-signature"> :Layer</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>The top-level <code>Layer</code> that is immediately above the top-level layer
+that contains this layer.  If this layer is at the top of the
+stack in the <em>Layers</em> panel, than this property will be <code>undefined</code>.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 828</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="topLayerAncestor"><span class="type-signature">&lt;readonly> </span>topLayerAncestor<span class="type-signature"> :Layer</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>The top-level <code>Layer</code> that contains this layer.  If this layer is
+at the top level, then the same layer is returned.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 807</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="topLayerBelow"><span class="type-signature">&lt;readonly> </span>topLayerBelow<span class="type-signature"> :Layer</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>The top-level <code>Layer</code> that is immediately below the top-level layer
+that contains this layer.  If this layer is at the bottom of the
+stack in the <em>Layers</em> panel, than this property will be <code>undefined</code>.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 844</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="visible"><span class="type-signature"></span>visible<span class="type-signature"> :Boolean</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Whether the layer is visible in the document.</p>
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 703</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        </dl>
+    
+    
+    
+        <h3 class="subsection-title">Methods</h3>
+        
+        <dl>
+            
+<dt>
+    <h4 class="name" id="deleteAllElements"><span class="type-signature"></span>deleteAllElements</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Deletes all of the child elements on this layer in this state,
+            including all of the children on all of its sub-layers.</p>
+    </div>
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 952</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="deleteElements"><span class="type-signature"></span>deleteElements</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Deletes the immediate child elements on the layer in this state.</p>
+    </div>
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 940</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="remove"><span class="type-signature"></span>remove</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Removes the layer from the document.  This has the side effect of
+causing all the other <code>Layer</code> instances in the <code>LayerTree</code> to go
+"stale", since deleting a layer may cause the other layers in the
+document to shift their index.  Accessing the properties on a stale
+<code>Layer</code> instance will throw an exception.</p>
+    </div>
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 926</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="selectAllElements"><span class="type-signature"></span>selectAllElements</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Selects all of the child elements on the layer in this state, including
+            all of the children on all of its sub-layers.  This is unlike calling
+            <code>dom.selectAllOnLayer()</code>, which selects only the layer's immediate
+            elements, not any elements on any of its sub-layers.</p>
+    </div>
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 966</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="setElementLocked"><span class="type-signature"></span>setElementLocked</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Locks or unlocks a given element in the layer.  This method works
+around the bug in <code>dom.setElementLocked()</code>, which indexes the layer
+elements in reverse order compared to the <code>dom.layers[0].frames[0].elements</code>
+array.</p>
+    </div>
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>inIndex</code></td>
+            
+            
+            <td class="type">
+            
+                        Number
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"><p>The index of the element whose locked state
+you want to change.  This is the index of the element in the
+layer's <code>elements</code> array.</p></td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>inLocked</code></td>
+            
+            
+            <td class="type">
+            
+                        Boolean
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"><p>The value to set the locked state to.</p></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 1011</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="setElementVisible"><span class="type-signature"></span>setElementVisible</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Hides or shows a given element in the layer.  This method works
+around the bug in <code>dom.setElementVisible()</code>, which indexes the layer
+elements in reverse order compared to the <code>dom.layers[0].frames[0].elements</code>
+array.</p>
+    </div>
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>inIndex</code></td>
+            
+            
+            <td class="type">
+            
+                        Number
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"><p>The index of the element whose visible state
+you want to change.  This is the index of the element in the
+layer's <code>elements</code> array.</p></td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>inVisible</code></td>
+            
+            
+            <td class="type">
+            
+                        Boolean
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"><p>The value to set the visible state to.</p></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 984</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="sublayer"><span class="type-signature"></span>sublayer</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Returns a <code>Layer</code> instance accessed by its index in the layer's
+list of immediate sub-layers or by its name.  Note that the index
+is different than the sub-layer's corresponding index in its parent's
+<code>elemsandsublayers</code> array.</p>
+    </div>
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>inIndex</code></td>
+            
+            
+            <td class="type">
+            
+                        Number
+                         | 
+                    
+                        String
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"><p>The 0-based index or name of a sub-layer.</p></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 589</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    <p>A <code>Layer</code> instance representing the specified
+sub-layer, or <code>undefined</code> if it can't be found.</p>
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">Layer</span> 
+		
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="sublayerByElemsIndex"><span class="type-signature"></span>sublayerByElemsIndex</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Returns a <code>Layer</code> instance accessed by its index in the layer's
+<code>elemsandsublayers</code> array, which is different from the layer's
+<code>sublayerIndex</code>, since <code>elemsandsublayers</code> contains both layers and
+elements.  You would use this when walking a layer's
+<code>elemsandsublayers</code> array to access the <code>Layer</code> instance
+corresponding to a particular sub-layer in that array.</p>
+    </div>
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>inIndex</code></td>
+            
+            
+            <td class="type">
+            
+                        Number
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"><p>The 0-based index of a sub-layer in its
+parent's <code>elemsandsublayers</code> array.</p></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>lib/fwlib/layers.js, line 610</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    <p>A <code>Layer</code> instance representing the specified
+sub-layer, or <code>undefined</code> if it can't be found.</p>
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">Layer</span> 
+		
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        </dl>
+    
+    
+    
+    
+    
+</article>
+
+</section>  
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-DomStorage.html">DomStorage</a></li><li><a href="module-files.html">files</a></li><li><a href="module-fonts.html">fonts</a></li><li><a href="module-layers.html">layers</a></li><li><a href="module-prefs.html">prefs</a></li><li><a href="module-underscore.html">underscore</a></li></ul><h3>Classes</h3><ul><li><a href="a321565296.html">DomStorage</a></li><li><a href="module-layers.Layer.html">Layer</a></li><li><a href="module-layers.LayerTree.html">LayerTree</a></li><li><a href="module-prefs.PrefsStorage.html">PrefsStorage</a></li><li><a href="_.html">_</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3</a> on Mon Jul 08 2013 09:13:10 GMT-0700 (PDT)
+</footer>
+
+<script> sh_highlightDocument(); </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+if (fw.platform != "win") {
+	alert("FwPrism not support MacOS yet!");
+}else{
+	var TargetFolder, CurrentFolder;
+
+	TargetFolder = convertURLToOSPath(fw.appSwfCommandsDir+"/FwPrism", false);
+	CurrentFolder = convertURLToOSPath(fw.currentScriptDir, false);
+
+	if(TargetFolder!=CurrentFolder){
+		if(!Files.exists(TargetFolder)){ Files.createDirectory(TargetFolder); }
+
+
+
+		var sp = '\n';
+		var batFile, batFilePath, batFileText;
+
+		batFilePath = fw.currentScriptDir + "/install.bat";
+
+		Files.deleteFileIfExisting(batFilePath);
+		Files.createFile(batFilePath, "TEXT", "????");
+
+		batFile = Files.open(batFilePath, true);
+
+		batFileText = '';
+		batFileText += '@echo off&MODE CON COLS=80 LINES=20' +sp;
+		batFileText += 'TITLE FwPrism installing...' +sp;
+		batFileText += 'COLOR 4E' +sp;
+		batFileText += 'cls' +sp;
+		batFileText += 'xcopy/y/e/i ' + CurrentFolder +' '+ TargetFolder +sp;
+		//batFileText += 'cls' +sp;
+		batFileText += 'echo.' +sp;
+		batFileText += 'echo.' +sp;
+		batFileText += 'echo.' +sp;
+		batFileText += 'echo.' +sp;
+		batFileText += 'echo ==========================================' +sp;
+		batFileText += 'echo      FwPrism installation successful!' +sp;
+		batFileText += 'echo ==========================================' +sp;
+		batFileText += 'echo.' +sp;
+		batFileText += 'echo ' +sp;
+		batFileText += 'echo ' +sp;
+		batFileText += 'choice /t 8 /d y /n >nul' +sp;
+		batFileText += 'del/f/q '+ convertURLToOSPath(fw.userSwfCommandsDir+"/FwPrism/install.jsf", false) +sp;
+		batFileText += 'del/f/q '+ convertURLToOSPath(fw.userSwfCommandsDir+"/FwPrism/install.bat", false) +sp;
+		batFileText += 'echo ' +sp;
+		batFileText += 'del/f/q %0' +sp;
+
+
+
+		batFile.write(batFileText);
+		batFile.close();
+		fw.launchApp(batFilePath, []);
+	}else{
+		alert("FwPrism already existed, installation abort.");
+	}
+}
+
+
+/* URI转为系统路径 */
+function convertURLToOSPath(inURL, quote){
+	if(!inURL){return}
+	if (fw.platform == "win") {
+	  /*  // replace file:///C| with C: and turn / into \  */
+	  var path = inURL.replace(/file:\/\/\/(.)\|/, "$1:");
+	  path = path.replace(/\//g, "\\");
+	} else {
+	  /*  // replace file:/// with /Volumes/  */
+	  var path = "/Volumes" + inURL.replace(/file:\/\//, "");
+	}
+	// we also have to convert the URL-encoded chars back into normal chars
+	// so that the OS can handle the path, and quote the path in case it
+	// contains spaces
+	if(!quote){
+		return '"' + unescape(path) + '"';
+	}else{
+		return unescape(path);
+	}
+}

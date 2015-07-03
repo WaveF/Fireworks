@@ -1,0 +1,3 @@
+/*FwPrism_MoveCommandFileToDestination*/
+var install=Files.copy("file:///D|/Program%20Files%20(x86)/Adobe/Adobe%20Fireworks%20CS6/Configuration/Command%20Panels/FwPrism/download/panel/Retina Assistant.js","file:///D|/Program%20Files%20(x86)/Adobe/Adobe%20Fireworks%20CS6/Configuration/Command%20Panels/FwPrism/modules/Retina Assistant.js");
+if(install){alert("[ Retina Assistant.js ]\n\nInstallation is completed.")}else{alert("[ Retina Assistant.js ]\n\nInstallation is failed.")}

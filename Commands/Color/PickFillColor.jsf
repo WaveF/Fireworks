@@ -1,6 +1,19 @@
-// JavaScript for Fireworks
-// access the command through Commands > PickFillColor
-// use 'Manage Saved Commands...' from Commands menu to delete existing commands
+/* =======================================================================================
+
+	Name:		PickFillColor
+	Version:	1.0.0
+
+	Author:		WaveF
+	Email:		wavef@qq.com
+	Website:	miniCG.com
+	Copyright:	2015 miniCG. All rights reserved.
+
+	History:	1.0.0 - First version
+				1.0.1 - get color from first selected object as initial color
+
+======================================================================================== */
+
+try{
 
 (function(){
 	
@@ -8,13 +21,24 @@
 	if(fw.selection.length<1) return;
 	
 	var dom = fw.getDocumentDOM();
-	var colorValue;
+	var sel = fw.selection;
+	var el = sel[0];
+	var i, initColor, pickColor;
 	
 	//fw.activeTool = "Eyedropper";
-
-	//colorValue = fw.popupColorPicker({x:0, y:0}, "#FFFFFF00", true, false);
-	colorValue = fw.popupColorPickerOverMouse("#FFFFFF00", true, false);
 	
-	dom.setFillColor(colorValue);
+	if(el.pathAttributes.fill.category=="fc_Solid"){
+		initColor = el.pathAttributes.fillColor;
+		pickColor = fw.popupColorPickerOverMouse(initColor, true, false);
+		dom.setFillColor(pickColor);
+	}else{
+		initColor = el.pathAttributes.fill.gradient.nodes[0].color;
+		pickColor = fw.popupColorPickerOverMouse(initColor, true, false);
+		dom.setFillNColor({ category:"fc_Solid", ditherColors:[ "#000000", "#000000" ], edgeType:"antialiased", feather:0, gradient:null, name:"fn_Normal", pattern:null, shape:"solid", stampingMode:"blend opaque", textureBlend:0, webDitherTransparent:false }, pickColor);
+	}
 	
 })();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}

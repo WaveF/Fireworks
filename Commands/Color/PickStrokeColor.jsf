@@ -1,6 +1,19 @@
-// JavaScript for Fireworks
-// access the command through Commands > PickStrokeColor
-// use 'Manage Saved Commands...' from Commands menu to delete existing commands
+/* =======================================================================================
+
+	Name:		PickStrokeColor
+	Version:	1.0.0
+
+	Author:		WaveF
+	Email:		wavef@qq.com
+	Website:	miniCG.com
+	Copyright:	2015 miniCG. All rights reserved.
+
+	History:	1.0.0 - First version
+				1.0.1 - get color from first selected object as initial color
+
+======================================================================================== */
+
+try{
 
 (function(){
 	
@@ -9,10 +22,16 @@
 	
 	var dom = fw.getDocumentDOM();
 	var sel = fw.selection;
-	var i, colorValue;
+	var el = sel[0];
+	var i, initColor, pickColor;
 	
-	colorValue = fw.popupColorPickerOverMouse("#FFFFFF00", true, false);
+	initColor = el.pathAttributes.brushColor;
+	pickColor = fw.popupColorPickerOverMouse(initColor, true, false);
 	
-	for(i in sel){ sel[i].pathAttributes.brushColor = colorValue; }
+	for(i in sel){ sel[i].pathAttributes.brushColor = pickColor; }
 	
 })();
+
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
+}
