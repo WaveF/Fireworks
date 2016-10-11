@@ -1,0 +1,1 @@
+fw.runScript(fw.appSwfCommandsDir + "/FwPrism/core/restore.jsf");
