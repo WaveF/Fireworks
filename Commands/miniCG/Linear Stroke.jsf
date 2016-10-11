@@ -1,0 +1,40 @@
+// JavaScript for Fireworks
+// access the command through Commands > Gradient Stroke
+// use 'Manage Saved Commands...' from Commands menu to delete existing commands
+
+(function(){
+
+	if(fw.documents.length<1) return;
+	if(fw.selection.length<1) return;
+	
+	var sel = fw.selection;
+	var i, j, _nodes, _dynamicInfo, _pressure, _velocity;
+	
+	var param = prompt("请输入笔触'尺寸'及'透明度'的压感系数（以英文逗号分隔）：", "100,50");
+	param = param.split(" ").join("");
+	param = param.split(",");
+	
+	//渐变会出现在每个nodes之间，每个nodes由两个dynamicInfo间控制渐变压感
+	//dynamicInfo越多，越平滑
+	//_pressure从小到大递增， _velocity相反
+	
+	for(i in sel){
+		
+		//设置线条复合次数
+		sel[i].pathAttributes.brush.tipCount = 10;
+		
+		sel[i].pathAttributes.brush.sense_pressure_size = parseInt(param[0]);
+		sel[i].pathAttributes.brush.sense_pressure_opacity = parseInt(param[1]);
+		
+		_nodes = sel[i].contours[0].nodes;
+		
+		for(j in _nodes){
+			
+			_nodes[j].dynamicInfo[0].pressure = j/_nodes.length;
+			_nodes[j].dynamicInfo[0].velocity = 1-j/_nodes.length;
+			
+		}
+		
+	}
+	
+})();
