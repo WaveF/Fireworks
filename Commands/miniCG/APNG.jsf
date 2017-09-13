@@ -22,7 +22,7 @@ try{
     var arr = langFolder.split("/");
     var lang = arr[arr.length-1];
     var str;
-    if(lang.indexOf("Chinese") != -1){
+    if(lang.indexOf("Chinese") == -1){
         str = [
             "Auto / Manual",
             "-f=Skip 1st frame, -kp=Keep palette, -kc=Keep color type,\n-z0=zlib compression, -z1=7zip compression(default), \n-z2=Zopfli compression",
