@@ -1,130 +1,202 @@
-var langFolder = Files.getLanguageDirectory();
-var arr = langFolder.split("/");
-var lang = arr[arr.length-1];
-if(lang.indexOf("Chinese") == -1){
-	str1 = "Skip first frame?\nThe first frame will be shown on APNG unsupported browsers.";
-}else{
-	str1 = "ÊÇ·ñÆôÓÃ¼æÈÝÖ§³Ö£¿\nµÚÒ»Ö¡½«½ö±»ÓÃÓÚÏÔÊ¾ÔÚ²»Ö§³ÖapngµÄä¯ÀÀÆ÷ÉÏ...";
-}
+/* =======================================================================================
 
-var dom	= fw.getDocumentDOM();
-var delayTime = [];
-var i, id, totalFrames;
+	Name:		APNG
+	Version:	2.0.0
 
-var domPath = fw.getDocumentPath(dom);
+	Author:		WaveF
+	Email:		wavef@qq.com
+	Website:	http://miniCG.com
+	Copyright:	2017 miniCG.com. All rights reserved.
 
-var domPathHandler = domPath.split("/");
-	domPathHandler[domPathHandler.length-1] = "";
-	domPath = domPathHandler.join("/");
+	History:	1.0.0 - First version
+				2.0.0 - Add auto-mode and manual-mode
+                        Save incremental
+				
+	More information please visit:
+    APNG Assembler - http://apngasm.sourceforge.net
 
-if(domPath[domPath.length-1]=="/"){ domPath = domPath.substr(0,domPath.length-1); }
+======================================================================================== */
+try{
+(function(){
+    var langFolder = Files.getLanguageDirectory();
+    var arr = langFolder.split("/");
+    var lang = arr[arr.length-1];
+    var str;
+    if(lang.indexOf("Chinese") != -1){
+        str = [
+            "Auto / Manual",
+            "-f=Skip 1st frame, -kp=Keep palette, -kc=Keep color type,\n-z0=zlib compression, -z1=7zip compression(default), \n-z2=Zopfli compression",
+            "You must save current document first!",
+            "Export APNG as:\n\n--> "
+        ];
+    }else{
+        str = [
+            "å…¨è‡ªåŠ¨è¾“å‡º / æ‰‹åŠ¨è®¾ç½®å‚æ•°",
+            "-f=è·³è¿‡ç¬¬1å¸§å¹¶ç”¨äºŽåœ¨ä¸æ”¯æŒçš„æµè§ˆå™¨ä¸Šæ˜¾ç¤º,\n-kp=ä¿ç•™è°ƒè‰²æ¿ä¸ä¼˜åŒ–,\n-kc=ä¿ç•™é¢œè‰²ç±»åž‹ä¸ä¼˜åŒ–\n-z0=zlibåŽ‹ç¼©, -z1=7zipåŽ‹ç¼©(é»˜è®¤), -z2=ZopfliåŽ‹ç¼©",
+            "ä½ å¿…é¡»å…ˆä¿å­˜å½“å‰æ–‡ä»¶ï¼",
+            "å³å°†è¾“å‡ºAPNGåŠ¨ç”»æ–‡ä»¶ï¼š\n\n--> "
+        ];
+    }
+
+    var dom	= fw.getDocumentDOM();
+    var delayTime = [];
+    var i, id, totalFrames;
+    var domPath = fw.getDocumentPath(dom);
+    var domPathHandler = domPath.split("/");
+        domPathHandler[domPathHandler.length-1] = "";
+        domPath = domPathHandler.join("/");
+
+    if(domPath[domPath.length-1]=="/"){ domPath = domPath.substr(0,domPath.length-1); }
+
+    init();
+    var tempPath = domPath+"/apngTemp";
+        Files.deleteFileIfExisting(tempPath);
+
+    var params = "";
+    var Compatible, KeepPalette, KeepColorType, Compression, Looping, config;
+    var AutoExport = fw.yesNoDialog(str[0]);
+    if(AutoExport){
+        params += " /f /kp /kc /l"+ dom.frameLoopingCount;
+        config = true;
+    } else {
+        config = prompt(str[1], "/f /kp /kc /z1");
+        if (config) params = " " + config + " /l"+ dom.frameLoopingCount;
+    }
+
+    if(domPath!=""){
+        var date = new Date;
+        //var timestamp = new Date().getTime();
+        var timestamp = "" + date.getFullYear() + (date.getMonth()+1) + date.getDate() +"-"+ date.getHours() + date.getMinutes() + date.getSeconds();
+        var currentDocPath = dom.filePathForSave;
+        var currentDocFolder = Files.getDirectory(currentDocPath);
+        var exportFileName = Files.getFilename(currentDocPath);
+        var exportFileNameExt = Files.getExtension(exportFileName);
+            exportFileName = exportFileName.split(exportFileNameExt).join("")/* + "_" + timestamp*/;
+            exportFileName = exportFileName.split(".fw").join("");
+            exportFileName = getNewSaveName(currentDocFolder, exportFileName);
+            
+        alert(str[3] + exportFileName + ".png");
+        
+        if(config!=null){
+            Files.createDirectory(tempPath);
+
+            for(i=1; i<=totalFrames; i++){
+                if(i<10){ id="0"+i.toString(); }else{ id=i.toString(); }
+                
+                var frameImageFilePath = tempPath + "/frame" + id + ".png";
+                    dom.currentFrameNum = (i-1);
+                    dom.exportTo(frameImageFilePath, exportOptions);
+                
+                var frameTextFilePath = tempPath + "/frame" + id + ".txt";
+                    Files.createFile(frameTextFilePath, "TEXT", "????");
+                
+                var frameTextFile = Files.open(frameTextFilePath, true);
+                var frameText = "delay=" + delayTime[i-1] + "/100";
+                    frameTextFile.write(frameText);
+                    frameTextFile.close();
+            }
+            
+            Files.copy(fw.currentScriptDir+"/apngasm.exe", tempPath+"/apngasm.exe");
+            
+            var batchFilePath = tempPath + "/convert.bat";
+                Files.deleteFileIfExisting(batchFilePath);
+                Files.createFile(batchFilePath, "TEXT", "????");
+                
+            var batchFile = Files.open(batchFilePath, true);
+            var batchText = "@echo off\ncls\ncd /d %~dp0\napngasm "+exportFileName+".png frame*.png"+ params +"\ncopy/y .\\"+exportFileName+".png ..\\"+exportFileName+".png\ncd..\nrd /s/q apngTemp";
+                batchFile.write(batchText);
+                batchFile.close();
+                fw.launchApp(batchFilePath, []);
+        }
+    }else{
+        alert(str[2]);
+    }
 
 
-init();
+    //------ functions ------//
 
-var params = "";
-var Compatible = fw.yesNoDialog(str1);
-if(Compatible){ params += " /f" }
+    function init(){
 
-var Looping = dom.frameLoopingCount;
-params += " /l" + Looping;
+        totalFrames = dom.frameCount;
+        
+        for(i=0; i<totalFrames; i++){
+            delayTime.push(dom.frames[i].delay);
+        }
+        
+        exportOptions = {
+            animAutoCrop: true,
+            animAutoDifference: false,
+            applyScale: false,
+            colorMode: "32 bit",
+            crop: false,
+            cropBottom: 0,
+            cropLeft: 0,
+            cropRight: 0,
+            cropTop: 0,
+            ditherMode: "none",
+            ditherPercent: 100,
+            exportFormat: "PNG",
+            frameInfo: [  ],
+            interlacedGIF: false,
+            jpegQuality: 80,
+            jpegSelPreserveButtons: false,
+            jpegSelPreserveText: true,
+            jpegSelQuality: 90,
+            jpegSelQualityEnabled: false,
+            jpegSmoothness: 0,
+            jpegSubsampling: 0,
+            localAdaptive: true,
+            lossyGifAmount: 0,
+            macCreator: "????",
+            macFileType: "????",
+            name: null,
+            numCustomEntries: 0,
+            numEntriesRequested: 0,
+            numGridEntries: 6,
+            optimized: true,
+            paletteEntries: null,
+            paletteInfo: null,
+            paletteMode: "adaptive",
+            paletteTransparency: "none",
+            percentScale: 100,
+            progressiveJPEG: false,
+            savedAnimationRepeat: 0,
+            sorting: "none",
+            useScale: true,
+            webSnapAdaptive: false,
+            webSnapTolerance: 14,
+            xSize: 0,
+            ySize: 0
+        };
+    }
 
-var KeepPalette = true;
-if(KeepPalette){ params += " /kp" }
-
-var KeepColorType = true;
-if(KeepColorType){ params += " /kc" }
-
-
-if(domPath!=""){
-
-	var tempPath = domPath+"/apngTemp";
-	Files.deleteFileIfExisting(tempPath);
-	Files.createDirectory(tempPath);
-
-	for(i=1; i<=totalFrames; i++){
-		if(i<10){ id="0"+i.toString(); }else{ id=i.toString(); }
-		
-		var frameImageFilePath = tempPath + "/frame" + id + ".png";
-		dom.currentFrameNum = (i-1);
-		dom.exportTo(frameImageFilePath, exportOptions);
-		
-		var frameTextFilePath = tempPath + "/frame" + id + ".txt";
-		Files.createFile(frameTextFilePath, "TEXT", "????");
-		
-		var frameTextFile = Files.open(frameTextFilePath, true);
-		var frameText = "delay=" + delayTime[i-1] + "/100";
-		frameTextFile.write(frameText);
-		frameTextFile.close();
-	}
-	
-	Files.copy(fw.currentScriptDir+"/apngasm.exe", tempPath+"/apngasm.exe");
-	var batchFilePath = tempPath + "/convert.bat";
-	Files.deleteFileIfExisting(batchFilePath);
-	Files.createFile(batchFilePath, "TEXT", "????");
-	var batchFile = Files.open(batchFilePath, true);
-	var batchText = "@echo off\ncls\ncd /d %~dp0\napngasm animation.png frame*.png"+ params +"\ncopy/y .\\animation.png ..\\animation.png\ncd..\nrd /s/q apngTemp";
-	batchFile.write(batchText);
-	batchFile.close();
-	fw.launchApp(batchFilePath, []);
-
-}else{
-	alert("Äã±ØÐëÏÈ±£´æµ±Ç°ÎÄ¼þ£¡");
-}
-
-
-//------ functions ------//
-function init(){
-
-	totalFrames = dom.frameCount;
-	
-	for(i=0; i<totalFrames; i++){
-		delayTime.push(dom.frames[i].delay);
-	}
-	
-	exportOptions = {
-		animAutoCrop: true,
-		animAutoDifference: false,
-		applyScale: false,
-		colorMode: "32 bit",
-		crop: false,
-		cropBottom: 0,
-		cropLeft: 0,
-		cropRight: 0,
-		cropTop: 0,
-		ditherMode: "none",
-		ditherPercent: 100,
-		exportFormat: "PNG",
-		frameInfo: [  ],
-		interlacedGIF: false,
-		jpegQuality: 80,
-		jpegSelPreserveButtons: false,
-		jpegSelPreserveText: true,
-		jpegSelQuality: 90,
-		jpegSelQualityEnabled: false,
-		jpegSmoothness: 0,
-		jpegSubsampling: 0,
-		localAdaptive: true,
-		lossyGifAmount: 0,
-		macCreator: "????",
-		macFileType: "????",
-		name: null,
-		numCustomEntries: 0,
-		numEntriesRequested: 0,
-		numGridEntries: 6,
-		optimized: true,
-		paletteEntries: null,
-		paletteInfo: null,
-		paletteMode: "adaptive",
-		paletteTransparency: "none",
-		percentScale: 100,
-		progressiveJPEG: false,
-		savedAnimationRepeat: 0,
-		sorting: "none",
-		useScale: true,
-		webSnapAdaptive: false,
-		webSnapTolerance: 14,
-		xSize: 0,
-		ySize: 0
-	};
+    function getNewSaveName (folder, source) {
+        var prefix = "_apng";
+        var files = Files.enumFiles(folder);
+        var apngFiles = [];
+        var maxId = 0;
+        for (var m=0; m<files.length; m++) {
+            if (files[m].indexOf(source+prefix)!=-1) {
+                apngFiles.push(files[m]);
+            }
+        }
+        
+        for (var n=0; n<apngFiles.length; n++) {
+            var dir = Files.getDirectory(apngFiles[n]);
+            var fname = Files.getFilename(apngFiles[n]);
+            var ext = Files.getExtension(fname);
+                fname = fname.split(ext).join("");
+            var idx = fname.split(source+prefix).join("");
+                idx = parseInt(idx);
+            if ( !isNaN(idx) ) {
+                maxId = Math.max(maxId, idx);
+            }
+        }
+        
+        maxId++;
+        return source + prefix + maxId;
+    }
+})();
+} catch (exception) {
+	alert([exception, exception.lineNumber, exception.fileName].join("\n"));
 }
